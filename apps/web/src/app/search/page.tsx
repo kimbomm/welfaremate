@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -79,28 +79,26 @@ export default function SearchPage() {
   }, [query]);
 
   // 무한 스크롤
-  const loadMore = useCallback(() => {
-    if (hasMore) {
-      setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
-    }
-  }, [hasMore]);
-
   useEffect(() => {
+    const loader = loaderRef.current;
+    if (!loader) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          loadMore();
+        if (entries[0].isIntersecting) {
+          setDisplayCount((prev) => {
+            const next = prev + ITEMS_PER_PAGE;
+            return next > filteredResults.length ? filteredResults.length : next;
+          });
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: "100px" }
     );
 
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
+    observer.observe(loader);
 
     return () => observer.disconnect();
-  }, [hasMore, loadMore]);
+  }, [filteredResults.length]);
 
   const categories = Object.entries(categoryLabels);
   const isSearching = query.trim().length > 0 || selectedCategories.size > 0;
