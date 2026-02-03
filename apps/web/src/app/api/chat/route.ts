@@ -42,16 +42,26 @@ export async function POST(request: NextRequest) {
 
     // Gemini API 사용 가능 시
     if (GEMINI_API_KEY) {
-      const response = await generateGeminiResponse(
-        messages,
-        userQuery,
-        userAge,
-        userRegion
-      );
-      return NextResponse.json({
-        role: "assistant",
-        content: response,
-      });
+      try {
+        const response = await generateGeminiResponse(
+          messages,
+          userQuery,
+          userAge,
+          userRegion
+        );
+        return NextResponse.json({
+          role: "assistant",
+          content: response,
+        });
+      } catch (aiError) {
+        console.error("Gemini API error:", aiError);
+        // AI 실패 시 Fallback
+        const response = generateFallbackResponse(userQuery, userAge, userRegion);
+        return NextResponse.json({
+          role: "assistant",
+          content: response,
+        });
+      }
     }
 
     // Fallback: 규칙 기반 응답
@@ -62,8 +72,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Chat API error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", detail: errorMessage },
       { status: 500 }
     );
   }
