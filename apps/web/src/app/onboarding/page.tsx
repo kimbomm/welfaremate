@@ -78,17 +78,22 @@ export default function OnboardingPage() {
   };
 
   const handleSubmit = async () => {
+    type Employment = "employed" | "self-employed" | "unemployed" | "student" | "other";
+    type IncomeLevel = "low" | "medium" | "high";
+    type HouseholdType = "single" | "married" | "with-parents" | "other";
+    type HousingType = "rent" | "jeonse" | "own" | "with-parents" | "other";
+
     await saveProfile({
       birthYear: formData.birthYear,
       region: {
         sido: formData.sido,
         sigungu: formData.sigungu || undefined,
       },
-      employment: formData.employment as FormData["employment"],
-      incomeLevel: formData.incomeLevel as "low" | "medium" | "high",
-      householdType: formData.householdType as FormData["householdType"],
+      employment: formData.employment as Employment,
+      incomeLevel: formData.incomeLevel as IncomeLevel,
+      householdType: formData.householdType as HouseholdType,
       hasChildren: formData.hasChildren,
-      housingType: formData.housingType as FormData["housingType"],
+      housingType: formData.housingType as HousingType,
       isHouseless: formData.isHouseless,
       isDisabled: false,
       isVeteran: false,

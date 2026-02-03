@@ -4,15 +4,13 @@
   "editorPicks": {
     "title": "2월 놓치면 안 되는 혜택",
     "description": "마감이 임박한 인기 복지 혜택",
-    "items": ["welfare_WF0001", "welfare_WF0002"],
-    "expiresAt": null
+    "items": ["welfare_WF0001", "welfare_WF0002"]
   },
   "banner": {
     "enabled": true,
     "type": "warning",
     "text": "청년 월세 지원 마감 D-56",
-    "link": "/welfare/welfare_WF0001",
-    "expiresAt": null
+    "link": "/welfare/welfare_WF0001"
   },
   "categoryOrder": [
     "housing",
