@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, MessageCircle, Heart, Home, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { getProfile, hasProfile, type UserProfile } from "@/lib/db";
 import {
   getWelfareList,
@@ -241,13 +242,20 @@ export default function HomePage() {
         </section>
       </div>
 
+      {/* Floating Chat Button */}
+      <Link
+        href="/chat"
+        className="fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg transition-transform active:scale-95"
+      >
+        <MessageCircle className="h-6 w-6" />
+      </Link>
+
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 mx-auto max-w-[720px] border-t bg-white">
         <div className="flex justify-around py-3">
           {[
             { icon: Home, label: "홈", active: true, href: "/" },
             { icon: Search, label: "검색", active: false, href: "/search" },
-            { icon: MessageCircle, label: "상담", active: false, href: "/chat" },
             { icon: Heart, label: "저장", active: false, href: "/bookmarks" },
           ].map((item) => (
             <button

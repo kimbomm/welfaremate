@@ -8,7 +8,6 @@ import {
   X,
   ChevronRight,
   Home,
-  MessageCircle,
   Heart,
   Sparkles,
 } from "lucide-react";
@@ -278,7 +277,6 @@ export default function SearchPage() {
           {[
             { icon: Home, label: "홈", active: false, href: "/" },
             { icon: Search, label: "검색", active: true, href: "/search" },
-            { icon: MessageCircle, label: "상담", active: false, href: "/chat" },
             { icon: Heart, label: "저장", active: false, href: "/bookmarks" },
           ].map((item) => (
             <button

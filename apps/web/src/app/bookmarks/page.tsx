@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Search, Home, MessageCircle, Heart, ChevronRight, Trash2 } from "lucide-react";
+import { Search, Home, Heart, Trash2 } from "lucide-react";
 import { getBookmarks, removeBookmark, type Bookmark } from "@/lib/db";
 import { getWelfareById, getCategoryLabel, formatDeadline } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
@@ -122,7 +122,6 @@ export default function BookmarksPage() {
           {[
             { icon: Home, label: "홈", active: false, href: "/" },
             { icon: Search, label: "검색", active: false, href: "/search" },
-            { icon: MessageCircle, label: "상담", active: false, href: "/chat" },
             { icon: Heart, label: "저장", active: true, href: "/bookmarks" },
           ].map((item) => (
             <button

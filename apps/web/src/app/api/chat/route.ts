@@ -4,6 +4,7 @@ import { getWelfareList, filterByAge } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const USE_AI = process.env.USE_AI === "true"; // AI 사용 여부 (기본: 비활성화)
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -42,8 +43,8 @@ export async function POST(request: NextRequest) {
 
     const userQuery = lastMessage.content;
 
-    // Gemini API 사용 가능 시
-    if (GEMINI_API_KEY) {
+    // Gemini API 사용 (USE_AI=true 일 때만)
+    if (USE_AI && GEMINI_API_KEY) {
       try {
         const response = await generateGeminiResponse(
           messages,
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       } catch (aiError) {
         console.error("Gemini API error:", aiError);
         // AI 실패 시 Fallback
-        const response = generateFallbackResponse(userQuery, userAge, userRegion);
+        const response = generateTemplateResponse(userQuery, userAge, userRegion);
         return NextResponse.json({
           role: "assistant",
           content: response,
@@ -66,8 +67,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback: 규칙 기반 응답
-    const response = generateFallbackResponse(userQuery, userAge, userRegion);
+    // 템플릿 기반 응답 (기본)
+    const response = generateTemplateResponse(userQuery, userAge, userRegion);
     return NextResponse.json({
       role: "assistant",
       content: response,
@@ -216,52 +217,92 @@ async function generateGeminiResponse(
   return response;
 }
 
-function generateFallbackResponse(
+// 템플릿 기반 챗봇 응답
+function generateTemplateResponse(
   query: string,
   userAge?: number,
   userRegion?: string
 ): string {
   const lowerQuery = query.toLowerCase();
 
+  // 인사 패턴
   if (
     lowerQuery.includes("안녕") ||
     lowerQuery.includes("하이") ||
     lowerQuery.includes("hello")
   ) {
-    return "안녕하세요! 복지메이트 AI 상담사입니다.\n\n궁금한 복지 혜택이 있으시면 편하게 물어봐 주세요.\n\n예시:\n- 청년 월세 지원 받을 수 있어?\n- 취업 관련 지원금 있어?\n- 임신하면 받을 수 있는 혜택 알려줘";
+    return `안녕하세요! 복지메이트 상담 챗봇입니다.
+
+궁금한 복지 혜택을 키워드로 물어봐 주세요.
+
+예시:
+- 청년 월세
+- 출산 지원
+- 취업 지원금
+- 임산부 혜택`;
   }
 
-  // 단순 텍스트 검색
+  // 도움말 패턴
+  if (
+    lowerQuery.includes("도움") ||
+    lowerQuery.includes("사용법") ||
+    lowerQuery.includes("뭐 할 수 있")
+  ) {
+    return `복지메이트 챗봇 사용법
+
+1. 키워드로 검색: "청년 월세", "출산 지원" 등
+2. 카테고리로 검색: "주거", "취업", "육아" 등
+3. 대상으로 검색: "임산부", "청년", "노인" 등
+
+검색된 혜택을 클릭하면 상세 정보를 확인할 수 있어요!`;
+  }
+
+  // 복지 검색
   let results = getWelfareList();
 
+  // 나이 필터
   if (userAge) {
     results = filterByAge(userAge);
   }
 
-  results = searchWelfareByText(query, results);
-
-  if (results.length === 0) {
-    return `죄송합니다. "${query}"에 해당하는 복지 혜택을 찾지 못했어요.\n\n다른 키워드로 검색해보시거나, 홈 화면에서 전체 혜택을 확인해보세요.`;
+  // 지역 필터
+  if (userRegion) {
+    results = results.filter((item) => {
+      if (!item.eligibility.region || item.eligibility.region.length === 0) {
+        return true;
+      }
+      return item.eligibility.region.some((r) => r.includes(userRegion));
+    });
   }
 
-  const topResults = results.slice(0, 3);
-  let response = `"${query}" 관련 혜택을 찾았어요!\n\n`;
+  // 텍스트 검색
+  results = searchWelfareByText(query, results);
+
+  // 결과 없음
+  if (results.length === 0) {
+    return `"${query}"에 해당하는 복지 혜택을 찾지 못했어요.
+
+다른 키워드로 검색해보세요:
+- 주거 관련: 월세, 전세, 임대
+- 취업 관련: 취업, 일자리, 구직
+- 육아 관련: 출산, 임산부, 보육
+- 교육 관련: 장학금, 학자금`;
+  }
+
+  // 결과 있음 - 상위 5개
+  const topResults = results.slice(0, 5);
+  let response = `"${query}" 관련 혜택 ${results.length}건을 찾았어요!\n\n`;
 
   topResults.forEach((item, index) => {
-    response += `**${index + 1}. ${item.title}**\n`;
-    response += `${item.summary.oneLiner}\n`;
-
-    if (item.eligibility.age) {
-      response += `- 나이: 만 ${item.eligibility.age.min || 0}~${item.eligibility.age.max || 100}세\n`;
-    }
-    if (item.eligibility.income) {
-      response += `- 소득: 중위소득 ${item.eligibility.income.percent}% 이하\n`;
-    }
-    response += `\n`;
+    response += `${index + 1}. [[${item.title}|${item.id}]]\n`;
+    response += `   ${item.summary.oneLiner.slice(0, 50)}...\n\n`;
   });
 
-  response += `\n자세한 내용은 각 혜택을 클릭해서 확인해보세요!`;
-  response += `\n\n---\n※ 정확한 자격 요건은 원본 페이지에서 확인해주세요.`;
+  if (results.length > 5) {
+    response += `\n검색에서 더 많은 혜택을 확인하세요!`;
+  }
+
+  response += `\n\n---\n※ 정확한 자격 요건은 각 혜택 페이지에서 확인해주세요.`;
 
   return response;
 }
