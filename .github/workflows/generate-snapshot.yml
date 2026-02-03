@@ -1,0 +1,53 @@
+name: Generate Welfare Snapshot
+
+on:
+  schedule:
+    # 매일 한국시간 03:00 (UTC 18:00)
+    - cron: "0 18 * * *"
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate snapshot
+        run: pnpm generate
+        env:
+          PUBLIC_DATA_API_KEY: ${{ secrets.PUBLIC_DATA_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet data/welfare-snapshot.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/welfare-snapshot.json
+          git commit -m "chore: 복지 데이터 스냅샷 업데이트 $(date +'%Y-%m-%d')"
+          git push

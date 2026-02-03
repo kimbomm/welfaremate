@@ -1,6 +1,397 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-03T03:00:00Z",
-  "totalCount": 3,
-  "items": []
+  "generatedAt": "2026-02-03T06:10:05.722Z",
+  "totalCount": 5,
+  "items": [
+    {
+      "id": "welfare_WF0001",
+      "title": "청년 월세 지원",
+      "category": "housing",
+      "tags": [
+        "청년",
+        "주거"
+      ],
+      "summary": {
+        "oneLiner": "월 최대 20만원",
+        "description": "청년의 주거비 부담 완화",
+        "aiGenerated": true,
+        "generatedAt": "2026-02-03T06:10:05.722Z"
+      },
+      "eligibility": {
+        "age": {
+          "min": 19,
+          "max": 34
+        },
+        "income": {
+          "type": "median",
+          "percent": 60
+        },
+        "region": [
+          "서울"
+        ],
+        "conditions": [
+          "만 19~34세",
+          "중위소득 60% 이하",
+          "무주택자"
+        ],
+        "conditionsExplained": "만 19~34세, 중위소득 60% 이하, 무주택자"
+      },
+      "benefit": {
+        "type": "money",
+        "amount": "월 최대 20만원",
+        "description": "월 최대 20만원, 최대 12개월 지원"
+      },
+      "documents": [
+        {
+          "name": "주민등록등본",
+          "required": true
+        },
+        {
+          "name": "소득증명서",
+          "required": true
+        },
+        {
+          "name": "임대차계약서",
+          "required": true
+        },
+        {
+          "name": "통장사본",
+          "required": true
+        }
+      ],
+      "schedule": {
+        "type": "period",
+        "end": "2026-03-31"
+      },
+      "application": {
+        "method": [
+          "온라인"
+        ],
+        "url": "https://www.bokjiro.go.kr",
+        "contact": "02-120"
+      },
+      "warnings": [],
+      "source": {
+        "name": "서울시",
+        "url": "https://www.bokjiro.go.kr",
+        "apiSource": "행안부_공공서비스API",
+        "lastSync": "2026-02-03T06:10:05.722Z"
+      },
+      "raw": {
+        "서비스ID": "WF0001",
+        "서비스명": "청년 월세 지원",
+        "서비스목적": "청년의 주거비 부담 완화",
+        "신청기한": "2026-03-31",
+        "지원내용": "월 최대 20만원, 최대 12개월 지원",
+        "선정기준": "만 19~34세, 중위소득 60% 이하, 무주택자",
+        "신청방법": "온라인 신청",
+        "구비서류": "주민등록등본, 소득증명서, 임대차계약서, 통장사본",
+        "온라인신청사이트URL": "https://www.bokjiro.go.kr",
+        "소관기관명": "서울시",
+        "부서명": "주거복지과",
+        "문의처": "02-120",
+        "지원대상": "청년",
+        "지원유형": "현금",
+        "서비스분야": "주거",
+        "수정일시": "2026-02-03T06:10:05.720Z"
+      }
+    },
+    {
+      "id": "welfare_WF0002",
+      "title": "청년 내일채움공제",
+      "category": "job",
+      "tags": [
+        "청년",
+        "취업"
+      ],
+      "summary": {
+        "oneLiner": "1,600만원",
+        "description": "청년 자산 형성 지원",
+        "aiGenerated": true,
+        "generatedAt": "2026-02-03T06:10:05.722Z"
+      },
+      "eligibility": {
+        "age": {
+          "min": 15,
+          "max": 34
+        },
+        "conditions": [
+          "만 15~34세",
+          "중소기업 정규직 취업자"
+        ],
+        "conditionsExplained": "만 15~34세, 중소기업 정규직 취업자"
+      },
+      "benefit": {
+        "type": "money",
+        "amount": "1,600만원",
+        "description": "2년 후 1,600만원 목돈 마련"
+      },
+      "documents": [
+        {
+          "name": "근로계약서",
+          "required": true
+        },
+        {
+          "name": "주민등록등본",
+          "required": true
+        }
+      ],
+      "schedule": {
+        "type": "always"
+      },
+      "application": {
+        "method": [
+          "온라인"
+        ],
+        "url": "https://www.work.go.kr",
+        "contact": "1350"
+      },
+      "warnings": [],
+      "source": {
+        "name": "고용노동부",
+        "url": "https://www.work.go.kr",
+        "apiSource": "행안부_공공서비스API",
+        "lastSync": "2026-02-03T06:10:05.722Z"
+      },
+      "raw": {
+        "서비스ID": "WF0002",
+        "서비스명": "청년 내일채움공제",
+        "서비스목적": "청년 자산 형성 지원",
+        "신청기한": "상시",
+        "지원내용": "2년 후 1,600만원 목돈 마련",
+        "선정기준": "만 15~34세, 중소기업 정규직 취업자",
+        "신청방법": "온라인 신청",
+        "구비서류": "근로계약서, 주민등록등본",
+        "온라인신청사이트URL": "https://www.work.go.kr",
+        "소관기관명": "고용노동부",
+        "부서명": "청년고용정책과",
+        "문의처": "1350",
+        "지원대상": "청년",
+        "지원유형": "현금",
+        "서비스분야": "취업",
+        "수정일시": "2026-02-03T06:10:05.721Z"
+      }
+    },
+    {
+      "id": "welfare_WF0003",
+      "title": "첫만남이용권",
+      "category": "childcare",
+      "tags": [
+        "영유아",
+        "보육"
+      ],
+      "summary": {
+        "oneLiner": "200만원",
+        "description": "출산 가정 경제적 지원",
+        "aiGenerated": true,
+        "generatedAt": "2026-02-03T06:10:05.722Z"
+      },
+      "eligibility": {
+        "conditions": [
+          "출생신고된 아동"
+        ],
+        "conditionsExplained": "출생신고된 아동"
+      },
+      "benefit": {
+        "type": "money",
+        "amount": "200만원",
+        "description": "출생아 1인당 200만원 바우처 지급"
+      },
+      "documents": [
+        {
+          "name": "출생증명서",
+          "required": true
+        },
+        {
+          "name": "신분증",
+          "required": true
+        }
+      ],
+      "schedule": {
+        "type": "always"
+      },
+      "application": {
+        "method": [
+          "온라인",
+          "방문"
+        ],
+        "url": "https://www.bokjiro.go.kr",
+        "contact": "129"
+      },
+      "warnings": [],
+      "source": {
+        "name": "보건복지부",
+        "url": "https://www.bokjiro.go.kr",
+        "apiSource": "행안부_공공서비스API",
+        "lastSync": "2026-02-03T06:10:05.722Z"
+      },
+      "raw": {
+        "서비스ID": "WF0003",
+        "서비스명": "첫만남이용권",
+        "서비스목적": "출산 가정 경제적 지원",
+        "신청기한": "상시",
+        "지원내용": "출생아 1인당 200만원 바우처 지급",
+        "선정기준": "출생신고된 아동",
+        "신청방법": "온라인, 방문 신청",
+        "구비서류": "출생증명서, 신분증",
+        "온라인신청사이트URL": "https://www.bokjiro.go.kr",
+        "소관기관명": "보건복지부",
+        "부서명": "인구아동정책과",
+        "문의처": "129",
+        "지원대상": "영유아",
+        "지원유형": "바우처",
+        "서비스분야": "보육",
+        "수정일시": "2026-02-03T06:10:05.721Z"
+      }
+    },
+    {
+      "id": "welfare_WF0004",
+      "title": "국민취업지원제도",
+      "category": "job",
+      "tags": [
+        "취업"
+      ],
+      "summary": {
+        "oneLiner": "월 50만원",
+        "description": "구직자 취업 지원",
+        "aiGenerated": true,
+        "generatedAt": "2026-02-03T06:10:05.722Z"
+      },
+      "eligibility": {
+        "age": {
+          "min": 15,
+          "max": 69
+        },
+        "conditions": [
+          "15~69세",
+          "구직자",
+          "소득·재산 기준 충족"
+        ],
+        "conditionsExplained": "15~69세, 구직자, 소득·재산 기준 충족"
+      },
+      "benefit": {
+        "type": "money",
+        "amount": "월 50만원",
+        "description": "월 50만원 구직촉진수당 + 취업지원서비스"
+      },
+      "documents": [
+        {
+          "name": "신분증",
+          "required": true
+        },
+        {
+          "name": "소득증빙서류",
+          "required": true
+        }
+      ],
+      "schedule": {
+        "type": "always"
+      },
+      "application": {
+        "method": [
+          "온라인"
+        ],
+        "url": "https://www.kua.go.kr",
+        "contact": "1350"
+      },
+      "warnings": [],
+      "source": {
+        "name": "고용노동부",
+        "url": "https://www.kua.go.kr",
+        "apiSource": "행안부_공공서비스API",
+        "lastSync": "2026-02-03T06:10:05.722Z"
+      },
+      "raw": {
+        "서비스ID": "WF0004",
+        "서비스명": "국민취업지원제도",
+        "서비스목적": "구직자 취업 지원",
+        "신청기한": "상시",
+        "지원내용": "월 50만원 구직촉진수당 + 취업지원서비스",
+        "선정기준": "15~69세, 구직자, 소득·재산 기준 충족",
+        "신청방법": "온라인 신청",
+        "구비서류": "신분증, 소득증빙서류",
+        "온라인신청사이트URL": "https://www.kua.go.kr",
+        "소관기관명": "고용노동부",
+        "부서명": "취업지원정책과",
+        "문의처": "1350",
+        "지원대상": "구직자",
+        "지원유형": "현금",
+        "서비스분야": "취업",
+        "수정일시": "2026-02-03T06:10:05.721Z"
+      }
+    },
+    {
+      "id": "welfare_WF0005",
+      "title": "청년도약계좌",
+      "category": "finance",
+      "tags": [
+        "청년",
+        "금융"
+      ],
+      "summary": {
+        "oneLiner": "5,000만원",
+        "description": "청년 자산 형성 지원",
+        "aiGenerated": true,
+        "generatedAt": "2026-02-03T06:10:05.722Z"
+      },
+      "eligibility": {
+        "age": {
+          "min": 19,
+          "max": 34
+        },
+        "conditions": [
+          "만 19~34세",
+          "개인소득 7",
+          "500만원 이하"
+        ],
+        "conditionsExplained": "만 19~34세, 개인소득 7,500만원 이하"
+      },
+      "benefit": {
+        "type": "money",
+        "amount": "5,000만원",
+        "description": "5년 만기 시 약 5,000만원 (정부기여금 포함)"
+      },
+      "documents": [
+        {
+          "name": "소득증빙서류",
+          "required": true
+        }
+      ],
+      "schedule": {
+        "type": "always"
+      },
+      "application": {
+        "method": [
+          "기타"
+        ],
+        "url": "https://www.kinfa.or.kr",
+        "contact": "1397"
+      },
+      "warnings": [],
+      "source": {
+        "name": "금융위원회",
+        "url": "https://www.kinfa.or.kr",
+        "apiSource": "행안부_공공서비스API",
+        "lastSync": "2026-02-03T06:10:05.722Z"
+      },
+      "raw": {
+        "서비스ID": "WF0005",
+        "서비스명": "청년도약계좌",
+        "서비스목적": "청년 자산 형성 지원",
+        "신청기한": "상시",
+        "지원내용": "5년 만기 시 약 5,000만원 (정부기여금 포함)",
+        "선정기준": "만 19~34세, 개인소득 7,500만원 이하",
+        "신청방법": "은행 앱 신청",
+        "구비서류": "소득증빙서류",
+        "온라인신청사이트URL": "https://www.kinfa.or.kr",
+        "소관기관명": "금융위원회",
+        "부서명": "서민금융과",
+        "문의처": "1397",
+        "지원대상": "청년",
+        "지원유형": "현금",
+        "서비스분야": "금융",
+        "수정일시": "2026-02-03T06:10:05.721Z"
+      }
+    }
+  ]
 }
