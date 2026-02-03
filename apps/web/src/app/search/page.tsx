@@ -19,6 +19,8 @@ import {
   formatDeadline,
   categoryLabels,
 } from "@welfaremate/data";
+import type { UserProfile } from "@welfaremate/types";
+import { getProfile } from "@/lib/db";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -29,12 +31,28 @@ export default function SearchPage() {
     new Set()
   );
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getProfile().then((p) => setProfile(p ?? null));
+  }, []);
 
   const allWelfare = getWelfareList();
 
   const filteredResults = useMemo(() => {
     let results = allWelfare;
+
+    // 지역 필터 (프로필 기반)
+    if (profile?.region?.sido) {
+      const userRegion = profile.region.sido;
+      results = results.filter((item) => {
+        if (!item.eligibility.region || item.eligibility.region.length === 0) {
+          return true;
+        }
+        return item.eligibility.region.some((r) => r.includes(userRegion));
+      });
+    }
 
     // 카테고리 필터 (선택된 것만)
     if (selectedCategories.size > 0) {
@@ -53,7 +71,7 @@ export default function SearchPage() {
     }
 
     return results;
-  }, [query, selectedCategories, allWelfare]);
+  }, [query, selectedCategories, allWelfare, profile]);
 
   // 표시할 결과
   const displayedResults = filteredResults.slice(0, displayCount);
