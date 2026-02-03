@@ -4,7 +4,9 @@ import type { RawServiceItem } from "./api.js";
 /**
  * 서비스분야 → 카테고리 매핑
  */
-function mapCategory(field: string): WelfareCategory {
+function mapCategory(field: string | null | undefined): WelfareCategory {
+  if (!field) return "other";
+  
   const mapping: Record<string, WelfareCategory> = {
     주거: "housing",
     취업: "job",
@@ -34,7 +36,9 @@ function mapCategory(field: string): WelfareCategory {
 /**
  * 나이 조건 파싱
  */
-function parseAgeCondition(text: string): { min?: number; max?: number } | undefined {
+function parseAgeCondition(text: string | null | undefined): { min?: number; max?: number } | undefined {
+  if (!text) return undefined;
+  
   // "만 19~34세" 패턴
   const rangeMatch = text.match(/만?\s*(\d+)\s*[~\-]\s*(\d+)\s*세/);
   if (rangeMatch) {
@@ -59,7 +63,9 @@ function parseAgeCondition(text: string): { min?: number; max?: number } | undef
 /**
  * 소득 조건 파싱
  */
-function parseIncomeCondition(text: string): { type: "median"; percent: number } | undefined {
+function parseIncomeCondition(text: string | null | undefined): { type: "median"; percent: number } | undefined {
+  if (!text) return undefined;
+  
   // "중위소득 60% 이하" 패턴
   const match = text.match(/중위소득\s*(\d+)\s*%/);
   if (match) {
@@ -71,7 +77,9 @@ function parseIncomeCondition(text: string): { type: "median"; percent: number }
 /**
  * 지역 파싱
  */
-function parseRegions(text: string): string[] | undefined {
+function parseRegions(text: string | null | undefined): string[] | undefined {
+  if (!text) return undefined;
+  
   const regions = [
     "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
     "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
@@ -97,7 +105,8 @@ function parseDocuments(text: string): DocumentItem[] {
 /**
  * 신청방법 파싱
  */
-function parseMethods(text: string): string[] {
+function parseMethods(text: string | null | undefined): string[] {
+  if (!text) return ["기타"];
   const methods: string[] = [];
   if (text.includes("온라인")) methods.push("온라인");
   if (text.includes("방문")) methods.push("방문");
@@ -110,7 +119,7 @@ function parseMethods(text: string): string[] {
 /**
  * 신청기한 파싱
  */
-function parseSchedule(deadline: string): WelfareItem["schedule"] {
+function parseSchedule(deadline: string | null | undefined): WelfareItem["schedule"] {
   if (!deadline || deadline === "상시" || deadline.includes("상시")) {
     return { type: "always" };
   }
@@ -139,7 +148,11 @@ function parseSchedule(deadline: string): WelfareItem["schedule"] {
 /**
  * 지원내용에서 금액 추출
  */
-function parseBenefit(content: string): WelfareItem["benefit"] {
+function parseBenefit(content: string | null | undefined): WelfareItem["benefit"] {
+  if (!content) {
+    return { type: "other", description: "" };
+  }
+  
   // 금액 패턴 추출 (월 XX만원, XX만원, XX원 등)
   const amountMatch = content.match(/(월\s*)?(최대\s*)?(\d+[,\d]*)\s*(만\s*)?원/);
   
@@ -155,21 +168,22 @@ function parseBenefit(content: string): WelfareItem["benefit"] {
  */
 function generateTags(item: RawServiceItem): string[] {
   const tags: string[] = [];
+  const target = item.지원대상 || "";
   
   // 지원대상에서 태그 추출
-  if (item.지원대상.includes("청년")) tags.push("청년");
-  if (item.지원대상.includes("노인") || item.지원대상.includes("어르신")) tags.push("어르신");
-  if (item.지원대상.includes("장애")) tags.push("장애인");
-  if (item.지원대상.includes("임산부") || item.지원대상.includes("임신")) tags.push("임산부");
-  if (item.지원대상.includes("영유아") || item.지원대상.includes("아동")) tags.push("영유아");
-  if (item.지원대상.includes("저소득")) tags.push("저소득");
-  if (item.지원대상.includes("다문화")) tags.push("다문화");
-  if (item.지원대상.includes("한부모")) tags.push("한부모");
+  if (target.includes("청년")) tags.push("청년");
+  if (target.includes("노인") || target.includes("어르신")) tags.push("어르신");
+  if (target.includes("장애")) tags.push("장애인");
+  if (target.includes("임산부") || target.includes("임신")) tags.push("임산부");
+  if (target.includes("영유아") || target.includes("아동")) tags.push("영유아");
+  if (target.includes("저소득")) tags.push("저소득");
+  if (target.includes("다문화")) tags.push("다문화");
+  if (target.includes("한부모")) tags.push("한부모");
   
   // 서비스분야 추가
   if (item.서비스분야) tags.push(item.서비스분야);
   
-  return [...new Set(tags)];
+  return Array.from(new Set(tags));
 }
 
 /**
@@ -183,15 +197,18 @@ export function transformToWelfareItems(rawData: RawServiceItem[]): WelfareItem[
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
 
+    const supportContent = item.지원내용 || "";
+    const servicePurpose = item.서비스목적 || "";
+
     return {
-      id: `welfare_${item.서비스ID}`,
-      title: item.서비스명,
+      id: `welfare_${item.서비스ID || crypto.randomUUID()}`,
+      title: item.서비스명 || "제목 없음",
       category: mapCategory(item.서비스분야),
       tags: generateTags(item),
 
       summary: {
-        oneLiner: item.지원내용.slice(0, 50) + (item.지원내용.length > 50 ? "..." : ""),
-        description: item.서비스목적,
+        oneLiner: supportContent.slice(0, 50) + (supportContent.length > 50 ? "..." : ""),
+        description: servicePurpose,
         aiGenerated: false,
         generatedAt: "",
       },
@@ -213,13 +230,13 @@ export function transformToWelfareItems(rawData: RawServiceItem[]): WelfareItem[
       application: {
         method: parseMethods(item.신청방법),
         url: item.온라인신청사이트URL || "https://www.bokjiro.go.kr",
-        contact: item.문의처,
+        contact: item.문의처 || "",
       },
 
       warnings: [],
 
       source: {
-        name: item.소관기관명,
+        name: item.소관기관명 || "",
         url: item.온라인신청사이트URL || "",
         apiSource: "행안부_공공서비스API",
         lastSync: new Date().toISOString(),
