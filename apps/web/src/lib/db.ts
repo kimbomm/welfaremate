@@ -32,15 +32,35 @@ export interface Bookmark {
   memo?: string;
 }
 
+// Chat 타입
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Dexie 데이터베이스 정의
 const db = new Dexie("WelfareMateDB") as Dexie & {
   profiles: EntityTable<UserProfile, "id">;
   bookmarks: EntityTable<Bookmark, "id">;
+  chatSessions: EntityTable<ChatSession, "id">;
+  chatMessages: EntityTable<ChatMessage, "id">;
 };
 
-db.version(1).stores({
+db.version(2).stores({
   profiles: "id, createdAt",
   bookmarks: "id, welfareId, createdAt",
+  chatSessions: "id, createdAt, updatedAt",
+  chatMessages: "id, sessionId, createdAt",
 });
 
 export { db };
@@ -97,4 +117,59 @@ export async function removeBookmark(welfareId: string): Promise<void> {
 export async function isBookmarked(welfareId: string): Promise<boolean> {
   const count = await db.bookmarks.where("welfareId").equals(welfareId).count();
   return count > 0;
+}
+
+// Chat 헬퍼 함수
+export async function getChatSessions(): Promise<ChatSession[]> {
+  return db.chatSessions.orderBy("updatedAt").reverse().toArray();
+}
+
+export async function getChatSession(sessionId: string): Promise<ChatSession | undefined> {
+  return db.chatSessions.get(sessionId);
+}
+
+export async function createChatSession(title: string = "새 상담"): Promise<string> {
+  const now = new Date().toISOString();
+  const id = crypto.randomUUID();
+  await db.chatSessions.add({
+    id,
+    title,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return id;
+}
+
+export async function updateChatSessionTitle(sessionId: string, title: string): Promise<void> {
+  await db.chatSessions.update(sessionId, {
+    title,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  await db.chatMessages.where("sessionId").equals(sessionId).delete();
+  await db.chatSessions.delete(sessionId);
+}
+
+export async function getChatMessages(sessionId: string): Promise<ChatMessage[]> {
+  return db.chatMessages.where("sessionId").equals(sessionId).sortBy("createdAt");
+}
+
+export async function addChatMessage(
+  sessionId: string,
+  role: "user" | "assistant",
+  content: string
+): Promise<void> {
+  await db.chatMessages.add({
+    id: crypto.randomUUID(),
+    sessionId,
+    role,
+    content,
+    createdAt: new Date().toISOString(),
+  });
+  // 세션 업데이트 시간 갱신
+  await db.chatSessions.update(sessionId, {
+    updatedAt: new Date().toISOString(),
+  });
 }
