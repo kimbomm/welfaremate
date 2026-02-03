@@ -1,0 +1,27 @@
+{
+  "pinnedItems": ["welfare_001"],
+  "hiddenItems": [],
+  "editorPicks": {
+    "title": "2월 놓치면 안 되는 혜택",
+    "description": "마감이 임박한 인기 복지 혜택",
+    "items": ["welfare_001", "welfare_002"],
+    "expiresAt": null
+  },
+  "banner": {
+    "enabled": true,
+    "type": "warning",
+    "text": "청년 월세 지원 마감 D-7",
+    "link": "/welfare/welfare_001",
+    "expiresAt": null
+  },
+  "categoryOrder": [
+    "housing",
+    "job",
+    "childcare",
+    "education",
+    "health",
+    "finance",
+    "culture",
+    "other"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "adsense": {
+    "enabled": false,
+    "slots": {
+      "home_banner": false,
+      "list_native": false,
+      "detail_bottom": false
+    }
+  },
+  "affiliates": {
+    "housing": [],
+    "job": [],
+    "education": [],
+    "childcare": [],
+    "health": [],
+    "culture": [],
+    "finance": [],
+    "other": []
+  }
+}

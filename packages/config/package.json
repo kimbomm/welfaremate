@@ -1,0 +1,12 @@
+{
+  "name": "@welfaremate/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "exports": {
+    "./tailwind.config": "./tailwind.config.ts"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
