@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, MessageCircle, Heart, Home, ChevronRight } from "lucide-react";
@@ -11,6 +11,86 @@ import {
   getCategoryLabel,
   formatDeadline,
 } from "@welfaremate/data";
+import type { WelfareItem } from "@welfaremate/types";
+
+// 추천 점수 계산 함수
+function calculateRecommendScore(
+  welfare: WelfareItem,
+  profile: UserProfile
+): number {
+  let score = 0;
+  const userAge = new Date().getFullYear() - profile.birthYear;
+
+  // 1. 결혼 여부 (가장 높은 우선순위)
+  const isMarried = profile.householdType === "married";
+  const hasChildTag = welfare.tags.some(
+    (tag) =>
+      tag.includes("출산") ||
+      tag.includes("육아") ||
+      tag.includes("임신") ||
+      tag.includes("영유아") ||
+      tag.includes("보육")
+  );
+  const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
+
+  if (isMarried && hasChildTag) {
+    score += 100; // 기혼자에게 출산/육아 관련 높은 점수
+  }
+  if (!isMarried && hasYouthTag) {
+    score += 100; // 미혼자에게 청년 관련 높은 점수
+  }
+
+  // 2. 소득 수준 (두 번째 우선순위)
+  if (welfare.eligibility.income) {
+    const incomePercent = welfare.eligibility.income.percent || 100;
+    if (profile.incomeLevel === "low" && incomePercent >= 50) {
+      score += 50;
+    } else if (profile.incomeLevel === "medium" && incomePercent >= 100) {
+      score += 50;
+    } else if (profile.incomeLevel === "high" && incomePercent > 100) {
+      score += 30;
+    }
+  } else {
+    // 소득 조건 없으면 누구나 가능
+    score += 40;
+  }
+
+  // 3. 나이 (세 번째 우선순위)
+  const { min, max } = welfare.eligibility.age || {};
+  if (min !== undefined || max !== undefined) {
+    const minAge = min || 0;
+    const maxAge = max || 100;
+    if (userAge >= minAge && userAge <= maxAge) {
+      score += 30; // 나이 조건 충족
+    } else {
+      score -= 50; // 나이 조건 미충족 시 감점
+    }
+  } else {
+    score += 20; // 나이 조건 없으면 약간의 점수
+  }
+
+  // 보너스: 지역 매칭
+  if (welfare.eligibility.region && welfare.eligibility.region.length > 0) {
+    const userRegion = profile.region.sido;
+    if (
+      welfare.eligibility.region.some((r) => userRegion.includes(r) || r.includes(userRegion.slice(0, 2)))
+    ) {
+      score += 20;
+    }
+  }
+
+  // 보너스: 마감 임박
+  if (welfare.schedule.end) {
+    const daysUntil = Math.ceil(
+      (new Date(welfare.schedule.end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysUntil > 0 && daysUntil <= 30) {
+      score += 10; // 마감 임박 시 약간의 가산점
+    }
+  }
+
+  return score;
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,6 +111,24 @@ export default function HomePage() {
     checkProfile();
   }, [router]);
 
+  // 추천 혜택 계산
+  const recommendedWelfare = useMemo(() => {
+    if (!profile) return [];
+
+    const allWelfare = getWelfareList();
+
+    // 점수 계산 후 정렬
+    const scored = allWelfare.map((welfare) => ({
+      welfare,
+      score: calculateRecommendScore(welfare, profile),
+    }));
+
+    // 점수 높은 순으로 정렬 후 상위 3개
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.slice(0, 3).map((item) => item.welfare);
+  }, [profile]);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -40,7 +138,6 @@ export default function HomePage() {
   }
 
   const banner = getBanner();
-  const welfareList = getWelfareList();
   const age = profile ? new Date().getFullYear() - profile.birthYear : 0;
 
   return (
@@ -93,10 +190,15 @@ export default function HomePage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">추천 혜택</h3>
-            <button className="text-sm text-gray-500">전체보기</button>
+            <button 
+              onClick={() => router.push("/search")}
+              className="text-sm text-gray-500"
+            >
+              전체보기
+            </button>
           </div>
 
-          {welfareList.map((welfare, index) => {
+          {recommendedWelfare.map((welfare, index) => {
             const deadline = formatDeadline(welfare.schedule.end);
 
             return (
