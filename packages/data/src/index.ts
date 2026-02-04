@@ -20,6 +20,8 @@ export interface WelfareDetailData {
     phone: string[];
   };
   lastCrawled: string;
+  // 스냅샷 raw.수정일시 기준 (증분 크롤링용 메타, UI에서는 사용하지 않음)
+  sourceModified?: string;
 }
 
 interface WelfareDetailResult {
