@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronLeft,
+  ChevronDown,
   Heart,
   Share2,
   ExternalLink,
@@ -13,9 +14,16 @@ import {
   Calendar,
   FileText,
   Info,
+  Lightbulb,
+  Sparkles,
 } from "lucide-react";
-import { getWelfareById, getCategoryLabel, formatDeadline } from "@welfaremate/data";
-import type { WelfareItem } from "@welfaremate/types";
+import {
+  getWelfareWithDetail,
+  getCategoryLabel,
+  formatDeadline,
+  findDocumentLink,
+  type WelfareItemWithDetail,
+} from "@welfaremate/data";
 import { isBookmarked, addBookmark, removeBookmark, getProfile } from "@/lib/db";
 
 export default function WelfareDetailPage() {
@@ -23,12 +31,13 @@ export default function WelfareDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [welfare, setWelfare] = useState<WelfareItem | null>(null);
+  const [welfare, setWelfare] = useState<WelfareItemWithDetail | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
   const [userAge, setUserAge] = useState<number | null>(null);
+  const [documentsOpen, setDocumentsOpen] = useState(true);
 
   useEffect(() => {
-    const data = getWelfareById(id);
+    const data = getWelfareWithDetail(id);
     if (data) {
       setWelfare(data);
     }
@@ -131,19 +140,45 @@ export default function WelfareDetailPage() {
           <h1 className="mb-2 text-2xl font-bold text-gray-900">{welfare.title}</h1>
           <p className="text-gray-500">{welfare.source.name}</p>
 
-          {/* Benefit Highlight */}
-          <div className="mt-6 rounded-2xl bg-primary-50 p-5">
-            <p className="text-sm text-primary-600">혜택</p>
-            <p className="mt-1 text-2xl font-bold text-primary-600">
-              {welfare.benefit.amount || welfare.benefit.description}
-            </p>
-            {welfare.benefit.duration && (
-              <p className="mt-1 text-primary-500">{welfare.benefit.duration}</p>
+          {/* AI Summary - AI 데이터가 있으면 표시 */}
+          {welfare.ai?.summary && (
+            <div className="mt-4 flex items-start gap-2 rounded-xl bg-blue-50 p-4">
+              <Sparkles className="h-5 w-5 flex-shrink-0 text-blue-500" />
+              <p className="text-sm text-blue-700">{welfare.ai.summary}</p>
+            </div>
+          )}
+
+          {/* Benefit Highlight - 라벨(회색) / 금액(primary) 구분 */}
+          <div className="mt-6 rounded-2xl border border-primary-100 bg-primary-50/50 p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-primary-500">혜택</p>
+            {welfare.ai?.benefits && welfare.ai.benefits.length > 0 ? (
+              <ul className="mt-3 space-y-3">
+                {welfare.ai.benefits.map((benefit, i) => (
+                  <li
+                    key={i}
+                    className="flex flex-col gap-0.5 border-b border-primary-100/80 pb-3 last:border-0 last:pb-0 last:mb-0"
+                  >
+                    <span className="text-sm text-gray-600">{benefit.label}</span>
+                    <span className="font-semibold text-primary-700 break-words">
+                      {benefit.value}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <>
+                <p className="mt-1 text-xl font-bold text-primary-700 break-words">
+                  {welfare.benefit.amount || welfare.benefit.description}
+                </p>
+                {welfare.benefit.duration && (
+                  <p className="mt-1 text-sm text-gray-500">{welfare.benefit.duration}</p>
+                )}
+              </>
             )}
           </div>
         </motion.section>
 
-        {/* Eligibility Section */}
+        {/* Eligibility Section - AI 데이터 우선 */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,6 +189,13 @@ export default function WelfareDetailPage() {
             <Check className="h-5 w-5 text-success" />
             자격 요건
           </h2>
+
+          {/* AI 요약 자격요건 */}
+          {welfare.ai?.eligibility && (
+            <div className="mb-4 rounded-xl bg-green-50 p-4">
+              <p className="font-medium text-green-700">{welfare.ai.eligibility.simple}</p>
+            </div>
+          )}
 
           <div className="space-y-3">
             {/* 나이 */}
@@ -210,8 +252,20 @@ export default function WelfareDetailPage() {
               </div>
             )}
 
-            {/* 기타 조건 */}
-            {welfare.eligibility.conditions.length > 0 && (
+            {/* AI 상세 조건 우선, 없으면 conditions, 없으면 raw.지원대상/선정기준 */}
+            {welfare.ai?.eligibility?.details && welfare.ai.eligibility.details.length > 0 ? (
+              <div className="rounded-xl border border-gray-200 p-4">
+                <p className="mb-2 font-medium text-gray-900">상세 조건</p>
+                <ul className="space-y-1">
+                  {welfare.ai.eligibility.details.map((detail, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-gray-500">
+                      <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-gray-400" />
+                      {detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : welfare.eligibility.conditions.length > 0 ? (
               <div className="rounded-xl border border-gray-200 p-4">
                 <p className="mb-2 font-medium text-gray-900">기타 조건</p>
                 <ul className="space-y-1">
@@ -223,42 +277,219 @@ export default function WelfareDetailPage() {
                   ))}
                 </ul>
               </div>
-            )}
+            ) : (() => {
+              const rawSupport = welfare.raw?.지원대상 as string | undefined;
+              const rawCriteria = welfare.raw?.선정기준 as string | undefined;
+              const rawText = rawSupport || rawCriteria;
+              if (!rawText || !rawText.trim()) return null;
+              return (
+                <div className="rounded-xl border border-gray-200 p-4">
+                  <p className="mb-2 font-medium text-gray-900">지원대상 / 선정기준</p>
+                  <pre className="whitespace-pre-wrap text-sm text-gray-600 font-sans">
+                    {rawText.trim()}
+                  </pre>
+                </div>
+              );
+            })()}
           </div>
         </motion.section>
 
-        {/* Documents Section */}
+        {/* Documents Section - 건수 표시, 아코디언, 체크박스 제거 */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="mt-3 bg-white px-5 py-6"
         >
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
-            <FileText className="h-5 w-5 text-primary-500" />
-            필요 서류
-          </h2>
+          {(() => {
+            const docList =
+              welfare.ai?.documents && welfare.ai.documents.length > 0
+                ? welfare.ai.documents.map((d) => ({ name: d.name, how: d.how }))
+                : welfare.detail?.documents.required.length
+                  ? welfare.detail.documents.required.map((name) => ({ name, how: undefined }))
+                  : welfare.documents.length > 0
+                    ? welfare.documents.map((d) => ({ name: d.name, how: d.note }))
+                    : [];
+            const docCount = docList.length;
 
-          <div className="space-y-2">
-            {welfare.documents.map((doc, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 p-4"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-md border-2 border-gray-300">
-                  <Check className="h-4 w-4 text-transparent" />
+            return (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setDocumentsOpen((o) => !o)}
+                  className="flex w-full items-center justify-between py-1 text-left"
+                >
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <FileText className="h-5 w-5 text-primary-500" />
+                    필수 서류
+                    {docCount > 0 && (
+                      <span className="text-sm font-normal text-gray-500">
+                        {docCount}건
+                      </span>
+                    )}
+                  </h2>
+                  <ChevronDown
+                    className={`h-5 w-5 text-gray-400 transition-transform ${documentsOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {docCount > 0 && documentsOpen && (
+                  <div className="mt-4 space-y-2">
+                    {docList.map((doc, i) => {
+                      const linkInfo = findDocumentLink(doc.name);
+                      return (
+                        <div
+                          key={i}
+                          className="rounded-xl border border-gray-200 p-4"
+                        >
+                          <p className="font-medium text-gray-900">{doc.name}</p>
+                          {(linkInfo || doc.how) && (
+                            <div className="mt-1 text-right">
+                              {linkInfo ? (
+                                <a
+                                  href={linkInfo.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-sm text-primary-500 hover:underline"
+                                >
+                                  {linkInfo.source}에서 발급
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : (
+                                <p className="text-sm text-gray-500">{doc.how}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {docCount === 0 && (
+                  <p className="mt-2 text-sm text-gray-500">서류 정보가 없습니다</p>
+                )}
+              </>
+            );
+          })()}
+        </motion.section>
+
+        {/* Legal Basis Section - 크롤링 데이터 */}
+        {welfare.detail?.legalBasis && welfare.detail.legalBasis.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="mt-3 bg-white px-5 py-6"
+          >
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <FileText className="h-5 w-5 text-primary-500" />
+              법적 근거
+            </h2>
+
+            <div className="space-y-2">
+              {welfare.detail.legalBasis.map((basis, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-gray-200 p-4"
+                >
+                  <p className="font-medium text-gray-900">{basis.name}</p>
+                  <p className="text-sm text-gray-500">{basis.article}</p>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">{doc.name}</p>
-                  {doc.note && <p className="text-sm text-gray-500">{doc.note}</p>}
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* AI Tips Section */}
+        {welfare.ai?.tips && welfare.ai.tips.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.26 }}
+            className="mt-3 bg-white px-5 py-6"
+          >
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <Lightbulb className="h-5 w-5 text-yellow-500" />
+              신청 팁
+            </h2>
+
+            <div className="space-y-2">
+              {welfare.ai.tips.map((tip, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-3 rounded-xl bg-yellow-50 p-4"
+                >
+                  <span className="mt-0.5 text-yellow-500">💡</span>
+                  <p className="text-sm text-gray-700">{tip}</p>
                 </div>
-                {doc.required && (
-                  <span className="ml-auto text-xs text-red-500">필수</span>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Duplicate Warning - AI 데이터 우선, 없으면 크롤링 데이터 */}
+        {(welfare.ai?.warning || welfare.detail?.duplicateWarning) && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.27 }}
+            className="mt-3 bg-white px-5 py-6"
+          >
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+              <AlertCircle className="h-5 w-5 text-warning" />
+              중복 수혜 불가
+            </h2>
+
+            <div className="rounded-xl bg-warning-light p-4">
+              <p className="text-sm text-gray-700">
+                {welfare.ai?.warning || welfare.detail?.duplicateWarning}
+              </p>
+            </div>
+          </motion.section>
+        )}
+
+        {/* 접수기관·문의처 */}
+        {(() => {
+          const agency =
+            welfare.application.receivingAgency ||
+            (welfare.raw?.접수기관 as string | undefined)?.trim() ||
+            welfare.detail?.contact?.agency;
+          const contact =
+            welfare.application.contact ||
+            (welfare.raw?.전화문의 as string | undefined)?.trim() ||
+            (welfare.detail?.contact?.phone?.length
+              ? welfare.detail.contact.phone.join(", ")
+              : "");
+          if (!agency && !contact) return null;
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+              className="mt-3 bg-white px-5 py-6"
+            >
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <Info className="h-5 w-5 text-gray-500" />
+                접수기관 · 문의처
+              </h2>
+              <div className="space-y-3">
+                {agency && (
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <p className="text-sm font-medium text-gray-500">접수기관</p>
+                    <p className="mt-0.5 font-medium text-gray-900">{agency}</p>
+                  </div>
+                )}
+                {contact && (
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <p className="text-sm font-medium text-gray-500">문의처</p>
+                    <p className="mt-0.5 font-medium text-gray-900 break-all">{contact}</p>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-        </motion.section>
+            </motion.section>
+          );
+        })()}
 
         {/* Schedule Section */}
         <motion.section
@@ -337,18 +568,34 @@ export default function WelfareDetailPage() {
         </motion.section>
       </div>
 
-      {/* Floating Button */}
-      <div className="sticky bottom-0 border-t bg-white p-5">
-        <a
-          href={welfare.application.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary-500 font-medium text-white transition-all active:scale-[0.98]"
-        >
-          신청하러 가기
-          <ExternalLink className="h-5 w-5" />
-        </a>
-      </div>
+      {/* Floating Button - URL에 따라 버튼 문구: 복지로/정부24/기타 */}
+      {(() => {
+        const applicationUrl =
+          welfare.application.url &&
+          !welfare.application.url.includes("bokjiro.go.kr")
+            ? welfare.application.url
+            : (welfare.raw?.상세조회URL as string | undefined)?.trim() ||
+                welfare.application.url ||
+                "https://www.bokjiro.go.kr";
+        const buttonLabel = applicationUrl.includes("bokjiro.go.kr")
+          ? "복지로에서 신청하기"
+          : applicationUrl.includes("gov.kr")
+            ? "정부24에서 신청하기"
+            : "신청하러 가기";
+        return (
+          <div className="sticky bottom-0 border-t bg-white p-5">
+            <a
+              href={applicationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary-500 font-medium text-white transition-all active:scale-[0.98]"
+            >
+              {buttonLabel}
+              <ExternalLink className="h-5 w-5" />
+            </a>
+          </div>
+        );
+      })()}
     </div>
   );
 }
