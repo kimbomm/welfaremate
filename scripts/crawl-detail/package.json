@@ -1,0 +1,21 @@
+{
+  "name": "@welfaremate/crawl-detail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "crawl": "tsx src/index.ts",
+    "crawl:sample": "tsx src/index.ts --sample",
+    "crawl:full": "tsx src/index.ts",
+    "ai:test": "tsx src/ai-reformat.ts"
+  },
+  "dependencies": {
+    "@welfaremate/types": "workspace:*",
+    "@google/generative-ai": "^0.21.0",
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

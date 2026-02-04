@@ -5,6 +5,66 @@ import type { WelfareItem, CurationConfig } from "@welfaremate/types";
 import snapshotData from "../../../data/welfare-snapshot.json";
 import curationData from "../../../data/config/curation.json";
 
+export interface WelfareDetailData {
+  documents: {
+    required: string[];
+    optional: string[];
+  };
+  duplicateWarning?: string;
+  legalBasis: {
+    name: string;
+    article: string;
+  }[];
+  contact: {
+    agency: string;
+    phone: string[];
+  };
+  lastCrawled: string;
+}
+
+interface WelfareDetailResult {
+  version: string;
+  generatedAt: string;
+  totalCount: number;
+  successCount: number;
+  failedIds: string[];
+  items: Record<string, WelfareDetailData>;
+}
+
+// 크롤링 상세 데이터 (샘플 또는 전체) - 정적 import
+let detailData: WelfareDetailResult | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  detailData = require("../../../data/welfare-detail-sample.json") as WelfareDetailResult;
+} catch {
+  // 크롤링 데이터 없음 - 무시
+}
+
+// AI 재가공 데이터 타입
+export interface WelfareAIData {
+  summary: string;
+  benefits: { label: string; value: string }[];
+  eligibility: { simple: string; details: string[] };
+  documents: { name: string; how?: string }[];
+  tips: string[];
+  warning: string | null;
+}
+
+interface WelfareAIResult {
+  version: string;
+  generatedAt: string;
+  items: Record<string, WelfareAIData>;
+}
+
+// AI 재가공 데이터 - 정적 import
+let aiData: WelfareAIResult | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  aiData = require("../../../data/welfare-ai-sample.json") as WelfareAIResult;
+} catch {
+  // AI 데이터 없음 - 무시
+}
+
 interface SnapshotFile {
   version: string;
   generatedAt: string;
@@ -24,6 +84,33 @@ export function getWelfareList(): WelfareItem[] {
 
 export function getWelfareById(id: string): WelfareItem | undefined {
   return snapshot.items.find((item) => item.id === id);
+}
+
+export function getWelfareDetail(id: string): WelfareDetailData | undefined {
+  if (!detailData) return undefined;
+  const welfare = getWelfareById(id);
+  if (!welfare) return undefined;
+  const serviceId = welfare.raw?.서비스ID as string | undefined;
+  if (!serviceId) return undefined;
+  return detailData.items[serviceId];
+}
+
+export interface WelfareItemWithDetail extends WelfareItem {
+  detail?: WelfareDetailData;
+  ai?: WelfareAIData;
+}
+
+export function getWelfareAI(id: string): WelfareAIData | undefined {
+  if (!aiData) return undefined;
+  return aiData.items[id];
+}
+
+export function getWelfareWithDetail(id: string): WelfareItemWithDetail | undefined {
+  const welfare = getWelfareById(id);
+  if (!welfare) return undefined;
+  const detail = getWelfareDetail(id);
+  const ai = getWelfareAI(id);
+  return { ...welfare, detail, ai };
 }
 
 export function getPinnedItems(): WelfareItem[] {
@@ -72,6 +159,59 @@ export const categoryLabels: Record<string, string> = {
 
 export function getCategoryLabel(category: string): string {
   return categoryLabels[category] || category;
+}
+
+// Document Links - 주요 서류 발급처 매핑
+export const documentLinks: Record<string, { url: string; source: string }> = {
+  주민등록등본: {
+    url: "https://www.gov.kr/mw/AA020InfoCappView.do?HighCtgCD=A01010&CappBizCD=13100000015",
+    source: "정부24",
+  },
+  주민등록초본: {
+    url: "https://www.gov.kr/mw/AA020InfoCappView.do?HighCtgCD=A01010&CappBizCD=13100000016",
+    source: "정부24",
+  },
+  가족관계증명서: {
+    url: "https://efamily.scourt.go.kr",
+    source: "대법원",
+  },
+  혼인관계증명서: {
+    url: "https://efamily.scourt.go.kr",
+    source: "대법원",
+  },
+  소득금액증명원: {
+    url: "https://www.hometax.go.kr",
+    source: "홈택스",
+  },
+  등기사항전부증명서: {
+    url: "https://www.iros.go.kr",
+    source: "인터넷등기소",
+  },
+  건강보험자격득실확인서: {
+    url: "https://www.nhis.or.kr",
+    source: "건강보험공단",
+  },
+};
+
+export function findDocumentLink(
+  docName: string
+): { url: string; source: string } | null {
+  if (documentLinks[docName]) return documentLinks[docName];
+
+  for (const [key, value] of Object.entries(documentLinks)) {
+    if (docName.includes(key) || key.includes(docName)) return value;
+  }
+
+  if (docName.includes("주민등록")) return documentLinks["주민등록등본"];
+  if (docName.includes("가족관계") || docName.includes("혼인"))
+    return documentLinks["가족관계증명서"];
+  if (docName.includes("등기")) return documentLinks["등기사항전부증명서"];
+  if (docName.includes("소득") || docName.includes("납세"))
+    return documentLinks["소득금액증명원"];
+  if (docName.includes("건강보험"))
+    return documentLinks["건강보험자격득실확인서"];
+
+  return null;
 }
 
 // Date Helpers

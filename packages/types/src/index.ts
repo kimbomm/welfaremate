@@ -70,6 +70,7 @@ export interface WelfareItem {
     method: string[];
     url: string;
     contact?: string;
+    receivingAgency?: string;
   };
 
   warnings: string[];

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { getProfile, hasProfile, type UserProfile } from "@/lib/db";
 import {
   getWelfareList,
+  getWelfareById,
   getBanner,
   getCategoryLabel,
   formatDeadline,
@@ -112,19 +113,28 @@ export default function HomePage() {
     checkProfile();
   }, [router]);
 
-  // 추천 혜택 계산
+  // 예시 데이터용: 추천 3건만 노출 (추후 원복 시 아래 블록을 주석 해제하고 EXAMPLE_RECOMMEND_IDS 블록 제거)
+  const EXAMPLE_RECOMMEND_IDS = [
+    "welfare_000000465790",
+    "welfare_105100000001",
+    "welfare_116010000001",
+  ];
+
   const recommendedWelfare = useMemo(() => {
+    const byId = EXAMPLE_RECOMMEND_IDS.map((id) => getWelfareById(id)).filter(
+      (w): w is WelfareItem => w !== undefined
+    );
+    if (byId.length > 0) return byId;
+
     if (!profile) return [];
 
     const allWelfare = getWelfareList();
 
-    // 점수 계산 후 정렬
     const scored = allWelfare.map((welfare) => ({
       welfare,
       score: calculateRecommendScore(welfare, profile),
     }));
 
-    // 점수 높은 순으로 정렬 후 상위 3개
     scored.sort((a, b) => b.score - a.score);
 
     return scored.slice(0, 3).map((item) => item.welfare);

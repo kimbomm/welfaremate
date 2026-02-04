@@ -229,15 +229,19 @@ export function transformToWelfareItems(rawData: RawServiceItem[]): WelfareItem[
 
       application: {
         method: parseMethods(item.신청방법),
-        url: item.온라인신청사이트URL || "https://www.bokjiro.go.kr",
-        contact: item.문의처 || "",
+        url:
+          (item.온라인신청사이트URL && item.온라인신청사이트URL.trim()) ||
+          (item.상세조회URL && item.상세조회URL.trim()) ||
+          "https://www.bokjiro.go.kr",
+        contact: item.문의처 || item.전화문의 || "",
+        receivingAgency: item.접수기관?.trim() || "",
       },
 
       warnings: [],
 
       source: {
         name: item.소관기관명 || "",
-        url: item.온라인신청사이트URL || "",
+        url: item.온라인신청사이트URL || item.상세조회URL || "",
         apiSource: "행안부_공공서비스API",
         lastSync: new Date().toISOString(),
       },

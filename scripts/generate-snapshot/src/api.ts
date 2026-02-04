@@ -20,20 +20,26 @@ interface APIResponse {
 export interface RawServiceItem {
   서비스ID: string;
   서비스명: string;
-  서비스목적: string;
+  서비스목적?: string;
+  서비스목적요약?: string;
   신청기한: string;
   지원내용: string;
   선정기준: string;
   신청방법: string;
   구비서류: string;
-  온라인신청사이트URL: string;
+  /** API에서 제공 시 사용, 없으면 상세조회URL 또는 복지로 */
+  온라인신청사이트URL?: string;
+  /** 정부24 상세페이지 (API 응답에 있으면 신청 URL 없을 때 fallback) */
+  상세조회URL?: string;
   소관기관명: string;
-  부서명: string;
-  문의처: string;
+  부서명?: string;
+  문의처?: string;
+  전화문의?: string;
   지원대상: string;
   지원유형: string;
   서비스분야: string;
   수정일시: string;
+  [key: string]: unknown;
 }
 
 export async function fetchPublicServices(): Promise<RawServiceItem[]> {
