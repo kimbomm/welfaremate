@@ -148,7 +148,7 @@ export default function WelfareDetailPage() {
             </div>
           )}
 
-          {/* Benefit Highlight - 라벨(회색) / 금액(primary) 구분 */}
+          {/* Benefit Highlight - 라벨 좌상, 금액 우하(필수서류와 동일 패턴) */}
           <div className="mt-6 rounded-2xl border border-primary-100 bg-primary-50/50 p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-primary-500">혜택</p>
             {welfare.ai?.benefits && welfare.ai.benefits.length > 0 ? (
@@ -156,24 +156,30 @@ export default function WelfareDetailPage() {
                 {welfare.ai.benefits.map((benefit, i) => (
                   <li
                     key={i}
-                    className="flex flex-col gap-0.5 border-b border-primary-100/80 pb-3 last:border-0 last:pb-0 last:mb-0"
+                    className="border-b border-primary-100/80 pb-3 last:border-0 last:pb-0 last:mb-0"
                   >
-                    <span className="text-sm text-gray-600">{benefit.label}</span>
-                    <span className="font-semibold text-primary-700 break-words">
-                      {benefit.value}
-                    </span>
+                    <p className="text-sm text-gray-600">{benefit.label}</p>
+                    <div className="mt-1 text-right">
+                      <span className="font-semibold text-primary-700">
+                        {benefit.value}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <>
-                <p className="mt-1 text-xl font-bold text-primary-700 break-words">
-                  {welfare.benefit.amount || welfare.benefit.description}
-                </p>
-                {welfare.benefit.duration && (
-                  <p className="mt-1 text-sm text-gray-500">{welfare.benefit.duration}</p>
+              <div className="mt-3">
+                {(welfare.benefit.duration || (welfare.benefit.amount && welfare.benefit.description)) && (
+                  <p className="text-sm text-gray-600">
+                    {welfare.benefit.duration || welfare.benefit.description}
+                  </p>
                 )}
-              </>
+                <div className="mt-1 text-right">
+                  <p className="font-semibold text-primary-700">
+                    {welfare.benefit.amount || welfare.benefit.description}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </motion.section>
@@ -449,19 +455,22 @@ export default function WelfareDetailPage() {
           </motion.section>
         )}
 
-        {/* 접수기관·문의처 */}
+        {/* 접수기관·문의처 - 전화문의는 || 구분, 항목은 기관명/전화번호 */}
         {(() => {
           const agency =
             welfare.application.receivingAgency ||
             (welfare.raw?.접수기관 as string | undefined)?.trim() ||
             welfare.detail?.contact?.agency;
-          const contact =
+          const contactRaw =
             welfare.application.contact ||
             (welfare.raw?.전화문의 as string | undefined)?.trim() ||
             (welfare.detail?.contact?.phone?.length
-              ? welfare.detail.contact.phone.join(", ")
+              ? welfare.detail.contact.phone.join("||")
               : "");
-          if (!agency && !contact) return null;
+          const contactItems = contactRaw
+            ? contactRaw.split("||").map((s) => s.trim()).filter(Boolean)
+            : [];
+          if (!agency && contactItems.length === 0) return null;
           return (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -473,17 +482,36 @@ export default function WelfareDetailPage() {
                 <Info className="h-5 w-5 text-gray-500" />
                 접수기관 · 문의처
               </h2>
-              <div className="space-y-3">
+              <div className="rounded-xl border border-gray-200 p-4 space-y-3">
                 {agency && (
-                  <div className="rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm font-medium text-gray-500">접수기관</p>
-                    <p className="mt-0.5 font-medium text-gray-900">{agency}</p>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">접수기관</p>
+                    <p className="mt-0.5 text-sm font-medium text-gray-900">{agency}</p>
                   </div>
                 )}
-                {contact && (
-                  <div className="rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm font-medium text-gray-500">문의처</p>
-                    <p className="mt-0.5 font-medium text-gray-900 break-all">{contact}</p>
+                {contactItems.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">문의처</p>
+                    <ul className="mt-1 space-y-2">
+                      {contactItems.map((item, i) => {
+                        const slash = item.indexOf("/");
+                        const name = slash >= 0 ? item.slice(0, slash).trim() : "";
+                        const phone = slash >= 0 ? item.slice(slash + 1).trim() : item;
+                        return (
+                          <li key={i} className="text-sm font-medium text-gray-900">
+                            {name && phone ? (
+                              <>
+                                <span>{name}</span>
+                                <span className="text-gray-500"> · </span>
+                                <span className="break-all">{phone}</span>
+                              </>
+                            ) : (
+                              <span className="break-all">{item}</span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 )}
               </div>
@@ -568,7 +596,7 @@ export default function WelfareDetailPage() {
         </motion.section>
       </div>
 
-      {/* Floating Button - URL에 따라 버튼 문구: 복지로/정부24/기타 */}
+      {/* Floating Button - 복지로만 "복지로에서 신청하기", 나머지 "신청하러 가기" */}
       {(() => {
         const applicationUrl =
           welfare.application.url &&
@@ -579,9 +607,7 @@ export default function WelfareDetailPage() {
                 "https://www.bokjiro.go.kr";
         const buttonLabel = applicationUrl.includes("bokjiro.go.kr")
           ? "복지로에서 신청하기"
-          : applicationUrl.includes("gov.kr")
-            ? "정부24에서 신청하기"
-            : "신청하러 가기";
+          : "신청하러 가기";
         return (
           <div className="sticky bottom-0 border-t bg-white p-5">
             <a
