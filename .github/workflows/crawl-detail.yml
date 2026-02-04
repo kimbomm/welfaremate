@@ -7,6 +7,8 @@ on:
 jobs:
   crawl:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # push를 위해 필요
 
     steps:
       - name: Checkout repository
@@ -32,10 +34,11 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet data/welfare-detail.json 2>/dev/null; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
+          # 수정/추가/삭제/untracked(새 파일) 모두 감지
+          if [ -n "$(git status --porcelain data/welfare-detail.json)" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Commit and push
