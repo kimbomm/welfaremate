@@ -15,20 +15,33 @@ const SAMPLE_IDS = [
   "119200000007", // 해양사고 국선 심판변론인 선정 지원
 ];
 
+function parseLimit(): number | undefined {
+  const idx = process.argv.indexOf("--limit");
+  if (idx === -1 || !process.argv[idx + 1]) return undefined;
+  const n = parseInt(process.argv[idx + 1], 10);
+  return Number.isNaN(n) || n < 1 ? undefined : n;
+}
+
 async function main() {
   const isSample = process.argv.includes("--sample");
+  const limit = parseLimit();
 
-  console.log("🔍 정부24 상세페이지 크롤링 시작...\n");
+  console.log("정부24 상세페이지 크롤링 시작...\n");
 
   let serviceIds: string[];
 
   if (isSample) {
-    console.log("📋 샘플 모드: 5개 항목만 크롤링\n");
+    console.log("샘플 모드: 5개 항목만 크롤링\n");
     serviceIds = SAMPLE_IDS;
   } else {
-    console.log("📋 전체 모드: welfare-snapshot.json에서 ID 추출\n");
+    console.log("전체 모드: welfare-snapshot.json에서 ID 추출\n");
     serviceIds = extractServiceIds();
-    console.log(`총 ${serviceIds.length}개 ID 발견\n`);
+    if (limit !== undefined) {
+      serviceIds = serviceIds.slice(0, limit);
+      console.log(`--limit ${limit} 적용: ${serviceIds.length}개만 크롤링\n`);
+    } else {
+      console.log(`총 ${serviceIds.length}개 ID 발견\n`);
+    }
   }
 
   const results = await crawlMultiple(serviceIds, (current, total, id) => {
@@ -48,7 +61,7 @@ async function main() {
 
   const outputPath = isSample
     ? path.join(DATA_DIR, "welfare-detail-sample.json")
-    : path.join(DATA_DIR, "welfare-detail.json");
+    : path.join(DATA_DIR, limit !== undefined ? "welfare-detail.json" : "welfare-detail.json");
 
   fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), "utf-8");
   console.log(`📁 저장 완료: ${outputPath}`);

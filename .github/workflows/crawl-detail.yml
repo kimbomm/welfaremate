@@ -1,3 +1,4 @@
+# 정부24 크롤링만 수행. 상세 재가공(AI)은 CI에 포함하지 않음. IDE에서 에이전트로 수행.
 name: Crawl Welfare Detail (정부24)
 
 on:

@@ -1,0 +1,17 @@
+{
+  "name": "@welfaremate/enrich-from-detail",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "enrich": "tsx src/index.ts",
+    "enrich:sample": "tsx src/index.ts --sample"
+  },
+  "dependencies": {
+    "@welfaremate/types": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

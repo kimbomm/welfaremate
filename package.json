@@ -8,7 +8,12 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "generate": "pnpm --filter=@welfaremate/generate-snapshot generate"
+    "generate": "pnpm --filter=@welfaremate/generate-snapshot generate",
+    "crawl:sample": "pnpm --filter=@welfaremate/crawl-detail crawl:sample",
+    "crawl:full": "pnpm --filter=@welfaremate/crawl-detail crawl:full",
+    "crawl:limit": "pnpm --filter=@welfaremate/crawl-detail crawl:limit",
+    "enrich": "pnpm --filter=@welfaremate/enrich-from-detail enrich",
+    "enrich:sample": "pnpm --filter=@welfaremate/enrich-from-detail enrich:sample"
   },
   "devDependencies": {
     "prettier": "^3.2.5",

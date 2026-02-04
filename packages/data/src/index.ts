@@ -56,13 +56,20 @@ interface WelfareAIResult {
   items: Record<string, WelfareAIData>;
 }
 
-// AI 재가공 데이터 - 정적 import
+// AI 재가공 데이터 - 정적 import (ai-sample 우선, 없으면 enriched)
 let aiData: WelfareAIResult | null = null;
+let enrichedData: WelfareAIResult | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   aiData = require("../../../data/welfare-ai-sample.json") as WelfareAIResult;
 } catch {
-  // AI 데이터 없음 - 무시
+  // AI 샘플 없음 - 무시
+}
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  enrichedData = require("../../../data/welfare-enriched.json") as WelfareAIResult;
+} catch {
+  // 규칙 기반 보강 데이터 없음 - 무시
 }
 
 interface SnapshotFile {
@@ -101,8 +108,7 @@ export interface WelfareItemWithDetail extends WelfareItem {
 }
 
 export function getWelfareAI(id: string): WelfareAIData | undefined {
-  if (!aiData) return undefined;
-  return aiData.items[id];
+  return aiData?.items[id] ?? enrichedData?.items[id];
 }
 
 export function getWelfareWithDetail(id: string): WelfareItemWithDetail | undefined {

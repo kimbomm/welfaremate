@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, MessageCircle, Heart, Home, ChevronRight } from "lucide-react";
@@ -8,23 +8,22 @@ import Link from "next/link";
 import { getProfile, hasProfile, type UserProfile } from "@/lib/db";
 import {
   getWelfareList,
-  getWelfareById,
   getBanner,
   getCategoryLabel,
   formatDeadline,
 } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
 
-// 추천 점수 계산 함수
+// 추천 점수 (우선순위: 자녀 > 결혼유무 > 소득 > 나이 > 주거형태 > 지역 > 마감)
 function calculateRecommendScore(
   welfare: WelfareItem,
   profile: UserProfile
 ): number {
   let score = 0;
   const userAge = new Date().getFullYear() - profile.birthYear;
+  const userSido = profile.region.sido;
+  const userSigungu = profile.region.sigungu;
 
-  // 1. 결혼 여부 (가장 높은 우선순위)
-  const isMarried = profile.householdType === "married";
   const hasChildTag = welfare.tags.some(
     (tag) =>
       tag.includes("출산") ||
@@ -34,61 +33,79 @@ function calculateRecommendScore(
       tag.includes("보육")
   );
   const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
+  const isMarried = profile.householdType === "married";
 
-  if (isMarried && hasChildTag) {
-    score += 100; // 기혼자에게 출산/육아 관련 높은 점수
-  }
-  if (!isMarried && hasYouthTag) {
-    score += 100; // 미혼자에게 청년 관련 높은 점수
-  }
+  // 1. 자녀
+  if (profile.hasChildren && hasChildTag) score += 120;
+  if (!profile.hasChildren && hasYouthTag) score += 120;
 
-  // 2. 소득 수준 (두 번째 우선순위)
+  // 2. 결혼유무
+  if (isMarried && hasChildTag) score += 100;
+  if (!isMarried && hasYouthTag) score += 100;
+
+  // 3. 소득
   if (welfare.eligibility.income) {
     const incomePercent = welfare.eligibility.income.percent || 100;
-    if (profile.incomeLevel === "low" && incomePercent >= 50) {
-      score += 50;
-    } else if (profile.incomeLevel === "medium" && incomePercent >= 100) {
-      score += 50;
-    } else if (profile.incomeLevel === "high" && incomePercent > 100) {
-      score += 30;
-    }
+    if (profile.incomeLevel === "low" && incomePercent >= 50) score += 80;
+    else if (profile.incomeLevel === "medium" && incomePercent >= 100) score += 80;
+    else if (profile.incomeLevel === "high" && incomePercent > 100) score += 50;
   } else {
-    // 소득 조건 없으면 누구나 가능
-    score += 40;
+    score += 50;
   }
 
-  // 3. 나이 (세 번째 우선순위)
+  // 4. 나이
   const { min, max } = welfare.eligibility.age || {};
   if (min !== undefined || max !== undefined) {
     const minAge = min || 0;
     const maxAge = max || 100;
-    if (userAge >= minAge && userAge <= maxAge) {
-      score += 30; // 나이 조건 충족
-    } else {
-      score -= 50; // 나이 조건 미충족 시 감점
-    }
+    if (userAge >= minAge && userAge <= maxAge) score += 70;
+    else score -= 60;
   } else {
-    score += 20; // 나이 조건 없으면 약간의 점수
+    score += 30;
   }
 
-  // 보너스: 지역 매칭
+  // 5. 주거형태 (주거 카테고리 또는 주거 관련 태그 + 유저 주거형태)
+  const isHousingWelfare =
+    welfare.category === "housing" ||
+    welfare.tags.some(
+      (tag) =>
+        tag.includes("주거") ||
+        tag.includes("임대") ||
+        tag.includes("전세") ||
+        tag.includes("월세") ||
+        tag.includes("자가") ||
+        tag.includes("무주택")
+    );
+  if (isHousingWelfare) {
+    const userHousing = profile.housingType;
+    if (userHousing === "rent" && (welfare.tags.some((t) => t.includes("월세") || t.includes("임대")) || welfare.category === "housing"))
+      score += 50;
+    if (userHousing === "jeonse" && (welfare.tags.some((t) => t.includes("전세")) || welfare.category === "housing"))
+      score += 50;
+    if (userHousing === "own" || userHousing === "with-parents") score += 30;
+    if (profile.isHouseless && isHousingWelfare) score += 40;
+  }
+
+  // 6. 지역 (이미 지역 필터 통과한 항목만 옴)
   if (welfare.eligibility.region && welfare.eligibility.region.length > 0) {
-    const userRegion = profile.region.sido;
-    if (
-      welfare.eligibility.region.some((r) => userRegion.includes(r) || r.includes(userRegion.slice(0, 2)))
-    ) {
-      score += 20;
-    }
+    const matchSido = welfare.eligibility.region.some(
+      (r) => userSido.includes(r) || r.includes(userSido) || r.includes(userSido.slice(0, 2))
+    );
+    const matchSigungu =
+      userSigungu &&
+      welfare.eligibility.region.some(
+        (r) => r.includes(userSigungu) || userSigungu.includes(r)
+      );
+    if (matchSigungu) score += 40;
+    else if (matchSido) score += 25;
   }
 
-  // 보너스: 마감 임박
+  // 7. 마감 임박
   if (welfare.schedule.end) {
     const daysUntil = Math.ceil(
       (new Date(welfare.schedule.end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
     );
-    if (daysUntil > 0 && daysUntil <= 30) {
-      score += 10; // 마감 임박 시 약간의 가산점
-    }
+    if (daysUntil > 0 && daysUntil <= 30) score += 10;
   }
 
   return score;
@@ -113,31 +130,35 @@ export default function HomePage() {
     checkProfile();
   }, [router]);
 
-  // 예시 데이터용: 추천 3건만 노출 (추후 원복 시 아래 블록을 주석 해제하고 EXAMPLE_RECOMMEND_IDS 블록 제거)
-  const EXAMPLE_RECOMMEND_IDS = [
-    "welfare_000000465790",
-    "welfare_105100000001",
-    "welfare_116010000001",
-  ];
+  const [recommendedWelfare, setRecommendedWelfare] = useState<WelfareItem[]>([]);
 
-  const recommendedWelfare = useMemo(() => {
-    const byId = EXAMPLE_RECOMMEND_IDS.map((id) => getWelfareById(id)).filter(
-      (w): w is WelfareItem => w !== undefined
-    );
-    if (byId.length > 0) return byId;
-
-    if (!profile) return [];
-
+  useEffect(() => {
+    if (!profile) {
+      setRecommendedWelfare([]);
+      return;
+    }
     const allWelfare = getWelfareList();
-
-    const scored = allWelfare.map((welfare) => ({
+    const userSido = profile.region.sido;
+    const userSigungu = profile.region.sigungu;
+    const regionFiltered = allWelfare.filter((w) => {
+      const regions = w.eligibility.region;
+      if (!regions || regions.length === 0) return false;
+      return regions.some((r) => {
+        const matchSido =
+          userSido.includes(r) || r.includes(userSido) || r.includes(userSido.slice(0, 2));
+        const matchSigungu =
+          userSigungu && (r.includes(userSigungu) || userSigungu.includes(r));
+        return matchSido || matchSigungu;
+      });
+    });
+    const scored = regionFiltered.map((welfare) => ({
       welfare,
       score: calculateRecommendScore(welfare, profile),
     }));
-
     scored.sort((a, b) => b.score - a.score);
-
-    return scored.slice(0, 3).map((item) => item.welfare);
+    const top20 = scored.slice(0, 20);
+    const shuffled = [...top20].sort(() => Math.random() - 0.5);
+    setRecommendedWelfare(shuffled.slice(0, 3).map((item) => item.welfare));
   }, [profile]);
 
   if (loading) {
