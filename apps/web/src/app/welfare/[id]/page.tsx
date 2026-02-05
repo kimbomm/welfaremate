@@ -21,6 +21,7 @@ import {
   getWelfareWithDetail,
   getCategoryLabel,
   formatDeadline,
+  getDaysUntil,
   findDocumentLink,
   type WelfareItemWithDetail,
 } from "@welfaremate/data";
@@ -596,7 +597,7 @@ export default function WelfareDetailPage() {
         </motion.section>
       </div>
 
-      {/* Floating Button - 복지로만 "복지로에서 신청하기", 나머지 "신청하러 가기" */}
+      {/* Floating Button - 마감 시 "상세내역 보기", 아니면 신청 버튼 */}
       {(() => {
         const applicationUrl =
           welfare.application.url &&
@@ -605,16 +606,24 @@ export default function WelfareDetailPage() {
             : (welfare.raw?.상세조회URL as string | undefined)?.trim() ||
                 welfare.application.url ||
                 "https://www.bokjiro.go.kr";
-        const buttonLabel = applicationUrl.includes("bokjiro.go.kr")
-          ? "복지로에서 신청하기"
-          : "신청하러 가기";
+        const daysUntil = getDaysUntil(welfare.schedule?.end);
+        const isClosed = daysUntil !== null && daysUntil < 0;
+        const buttonLabel = isClosed
+          ? "마감된 내역 보러가기"
+          : applicationUrl.includes("bokjiro.go.kr")
+            ? "복지로에서 신청하기"
+            : "신청하러 가기";
         return (
           <div className="sticky bottom-0 border-t bg-white p-5">
             <a
               href={applicationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary-500 font-medium text-white transition-all active:scale-[0.98]"
+              className={`flex h-14 w-full items-center justify-center gap-2 rounded-xl font-medium transition-all active:scale-[0.98] ${
+                isClosed
+                  ? "bg-gray-200 text-gray-700"
+                  : "bg-primary-500 text-white"
+              }`}
             >
               {buttonLabel}
               <ExternalLink className="h-5 w-5" />

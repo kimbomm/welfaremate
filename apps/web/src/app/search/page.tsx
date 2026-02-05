@@ -189,6 +189,12 @@ export default function SearchPage() {
   const sortedResults = useMemo(() => {
     const list = [...filteredResults];
     const getDays = (item: WelfareItem) => getDaysUntil(item.schedule?.end) ?? 9999;
+    const getDaysForSort = (item: WelfareItem) => {
+      const d = getDaysUntil(item.schedule?.end);
+      if (d === null) return 9999;
+      if (d < 0) return 10000 + d;
+      return d;
+    };
     const regionMatchesMyArea = (item: WelfareItem) =>
       filterState.regionMode !== "my" ||
       !profile?.region?.sido ||
@@ -202,10 +208,10 @@ export default function SearchPage() {
         const recB =
           isRecommended(b, profile) && regionMatchesMyArea(b) ? 0 : 1;
         if (recA !== recB) return recA - recB;
-        return getDays(a) - getDays(b);
+        return getDaysForSort(a) - getDaysForSort(b);
       });
     } else if (sortBy === "deadline") {
-      list.sort((a, b) => getDays(a) - getDays(b));
+      list.sort((a, b) => getDaysForSort(a) - getDaysForSort(b));
     }
     return list;
   }, [filteredResults, sortBy, profile, filterState.regionMode]);
@@ -414,7 +420,13 @@ export default function SearchPage() {
                               {getCategoryLabel(welfare.category)}
                             </span>
                             {deadline && (
-                              <span className="text-xs text-warning">
+                              <span
+                                className={
+                                  deadline === "마감"
+                                    ? "rounded-md bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600"
+                                    : "text-xs text-warning"
+                                }
+                              >
                                 {deadline}
                               </span>
                             )}

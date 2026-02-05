@@ -152,12 +152,14 @@ export default function HomePage() {
                   </span>
                   {deadline && (
                     <span
-                      className={`text-sm font-medium ${
-                        deadline.includes("D-") &&
-                        parseInt(deadline.replace("D-", "")) <= 7
-                          ? "text-warning"
-                          : "text-gray-400"
-                      }`}
+                      className={
+                        deadline === "마감"
+                          ? "rounded-md bg-gray-200 px-2 py-0.5 text-sm font-medium text-gray-600"
+                          : deadline.includes("D-") &&
+                              parseInt(deadline.replace("D-", "")) <= 7
+                            ? "text-sm font-medium text-warning"
+                            : "text-sm font-medium text-gray-400"
+                      }
                     >
                       {deadline}
                     </span>
