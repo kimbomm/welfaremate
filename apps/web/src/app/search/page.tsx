@@ -16,16 +16,69 @@ import {
   getWelfareList,
   getCategoryLabel,
   formatDeadline,
+  getDaysUntil,
   targetTraitOptions,
 } from "@welfaremate/data";
+import type { WelfareItem } from "@welfaremate/types";
 import type { UserProfile } from "@welfaremate/types";
 import { getProfile } from "@/lib/db";
+import { isRecommended } from "@/lib/recommend";
 import {
   FilterDrawer,
   type SearchFilterState,
 } from "@/app/search/FilterDrawer";
+import {
+  SortBottomSheet,
+  type SortOption,
+} from "@/app/search/SortBottomSheet";
 
 const ITEMS_PER_PAGE = 20;
+
+function getInitialFilterFromProfile(profile: UserProfile | null): SearchFilterState {
+  if (!profile) {
+    return {
+      regionMode: "all",
+      selectedCategories: [],
+      benefitTypes: [],
+      scheduleTypes: [],
+      targetTraits: [],
+      incomeMaxPercent: null,
+      householdSize: 1,
+    };
+  }
+  const targetTraits: string[] = [];
+  if (profile.isSingleParent) targetTraits.push("singleParent");
+  if (profile.isDisabled) targetTraits.push("disabled");
+  if (profile.isVeteran) targetTraits.push("veteran");
+  if (profile.isMulticultural) targetTraits.push("multicultural");
+  const userAge = new Date().getFullYear() - profile.birthYear;
+  if (userAge >= 19 && userAge <= 34) targetTraits.push("youth");
+
+  const incomeMaxPercent =
+    profile.incomeLevel === "low"
+      ? 60
+      : profile.incomeLevel === "medium"
+        ? 100
+        : null;
+
+  let householdSize = 1;
+  if (profile.hasChildren && profile.householdType === "married") {
+    householdSize = 3 + (profile.childrenAges?.length ?? 0);
+    if (householdSize > 7) householdSize = 7;
+  } else if (profile.householdType === "married") {
+    householdSize = 2;
+  }
+
+  return {
+    regionMode: profile.region?.sido ? "my" : "all",
+    selectedCategories: [],
+    benefitTypes: [],
+    scheduleTypes: [],
+    targetTraits,
+    incomeMaxPercent,
+    householdSize,
+  };
+}
 
 function matchesTargetTraits(
   item: { tags: string[]; eligibility: { conditions: string[] } },
@@ -54,17 +107,23 @@ export default function SearchPage() {
     benefitTypes: [],
     scheduleTypes: [],
     targetTraits: [],
+    incomeMaxPercent: null,
+    householdSize: 1,
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("recommend");
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
+  const hasInitializedFromProfile = useRef(false);
 
   useEffect(() => {
     getProfile().then((p) => {
       setProfile(p ?? null);
-      if (p?.region?.sido) {
-        setFilterState((prev) => ({ ...prev, regionMode: "my" }));
+      if (!hasInitializedFromProfile.current) {
+        hasInitializedFromProfile.current = true;
+        setFilterState(getInitialFilterFromProfile(p ?? null));
       }
     });
   }, []);
@@ -105,6 +164,15 @@ export default function SearchPage() {
       );
     }
 
+    if (filterState.incomeMaxPercent != null) {
+      const maxPercent = filterState.incomeMaxPercent;
+      results = results.filter((item) => {
+        const income = item.eligibility.income;
+        if (!income || income.percent == null) return true;
+        return income.percent <= maxPercent;
+      });
+    }
+
     if (query.trim()) {
       const lowerQuery = query.toLowerCase();
       results = results.filter(
@@ -118,11 +186,40 @@ export default function SearchPage() {
     return results;
   }, [query, filterState, allWelfare, profile]);
 
-  const displayedResults = filteredResults.slice(0, displayCount);
-  const hasMore = displayCount < filteredResults.length;
+  const sortedResults = useMemo(() => {
+    const list = [...filteredResults];
+    const getDays = (item: WelfareItem) => getDaysUntil(item.schedule?.end) ?? 9999;
+    const regionMatchesMyArea = (item: WelfareItem) =>
+      filterState.regionMode !== "my" ||
+      !profile?.region?.sido ||
+      (item.eligibility.region &&
+        item.eligibility.region.length > 0 &&
+        item.eligibility.region.some((r) => r.includes(profile.region.sido)));
+    if (sortBy === "recommend") {
+      list.sort((a, b) => {
+        const recA =
+          isRecommended(a, profile) && regionMatchesMyArea(a) ? 0 : 1;
+        const recB =
+          isRecommended(b, profile) && regionMatchesMyArea(b) ? 0 : 1;
+        if (recA !== recB) return recA - recB;
+        return getDays(a) - getDays(b);
+      });
+    } else if (sortBy === "deadline") {
+      list.sort((a, b) => getDays(a) - getDays(b));
+    }
+    return list;
+  }, [filteredResults, sortBy, profile, filterState.regionMode]);
+
+  const displayedResults = sortedResults.slice(0, displayCount);
+  const hasMore = displayCount < sortedResults.length;
 
   const handleApplyFilter = (next: SearchFilterState) => {
     setFilterState(next);
+    setDisplayCount(ITEMS_PER_PAGE);
+  };
+
+  const handleSortSelect = (next: SortOption) => {
+    setSortBy(next);
     setDisplayCount(ITEMS_PER_PAGE);
   };
 
@@ -131,7 +228,7 @@ export default function SearchPage() {
     (filterState.benefitTypes.length > 0 ? 1 : 0) +
     (filterState.scheduleTypes.length > 0 ? 1 : 0) +
     (filterState.targetTraits.length > 0 ? 1 : 0) +
-    (filterState.regionMode === "my" && profile?.region?.sido ? 1 : 0);
+    (filterState.incomeMaxPercent != null ? 1 : 0);
 
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
@@ -147,7 +244,7 @@ export default function SearchPage() {
         if (entries[0].isIntersecting) {
           setDisplayCount((prev) => {
             const next = prev + ITEMS_PER_PAGE;
-            return next > filteredResults.length ? filteredResults.length : next;
+            return next > sortedResults.length ? sortedResults.length : next;
           });
         }
       },
@@ -157,10 +254,12 @@ export default function SearchPage() {
     observer.observe(loader);
 
     return () => observer.disconnect();
-  }, [filteredResults.length]);
+  }, [sortedResults.length]);
 
   const isSearching =
-    query.trim().length > 0 || filterCount > 0;
+    query.trim().length > 0 ||
+    filterCount > 0 ||
+    (filterState.regionMode === "my" && !!profile?.region?.sido);
 
   return (
     <main className="flex min-h-screen flex-col pb-20">
@@ -212,6 +311,14 @@ export default function SearchPage() {
         profile={profile}
         initialFilter={filterState}
         onApply={handleApplyFilter}
+        getDefaultFilter={() => getInitialFilterFromProfile(profile)}
+      />
+
+      <SortBottomSheet
+        isOpen={sortSheetOpen}
+        onClose={() => setSortSheetOpen(false)}
+        currentSort={sortBy}
+        onSelect={handleSortSelect}
       />
 
       {/* Content */}
@@ -251,11 +358,20 @@ export default function SearchPage() {
         ) : (
           /* 검색 결과 */
           <>
-            <p className="mb-4 text-sm text-gray-500">
-              검색 결과 {filteredResults.length.toLocaleString()}건
-            </p>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                검색 결과 {sortedResults.length.toLocaleString()}건
+              </p>
+              <button
+                type="button"
+                onClick={() => setSortSheetOpen(true)}
+                className="text-sm font-medium text-primary-500"
+              >
+                정렬
+              </button>
+            </div>
 
-            {filteredResults.length === 0 ? (
+            {sortedResults.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -271,6 +387,16 @@ export default function SearchPage() {
               <div className="space-y-3">
                 {displayedResults.map((welfare, index) => {
                   const deadline = formatDeadline(welfare.schedule.end);
+                  const scoreRecommended = isRecommended(welfare, profile);
+                  const regionMatchesMyArea =
+                    filterState.regionMode !== "my" ||
+                    !profile?.region?.sido ||
+                    (welfare.eligibility.region &&
+                      welfare.eligibility.region.length > 0 &&
+                      welfare.eligibility.region.some((r) =>
+                        r.includes(profile.region.sido)
+                      ));
+                  const recommended = scoreRecommended && regionMatchesMyArea;
 
                   return (
                     <motion.div
@@ -283,13 +409,18 @@ export default function SearchPage() {
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-2">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
                             <span className="rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
                               {getCategoryLabel(welfare.category)}
                             </span>
                             {deadline && (
                               <span className="text-xs text-warning">
                                 {deadline}
+                              </span>
+                            )}
+                            {recommended && (
+                              <span className="rounded-md bg-success-light px-2 py-0.5 text-xs font-medium text-success">
+                                추천
                               </span>
                             )}
                           </div>

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Search, MessageCircle, Heart, Home, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getProfile, hasProfile, type UserProfile } from "@/lib/db";
+import { calculateRecommendScore } from "@/lib/recommend";
 import {
   getWelfareList,
   getBanner,
@@ -13,103 +14,6 @@ import {
   formatDeadline,
 } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
-
-// 추천 점수 (우선순위: 자녀 > 결혼유무 > 소득 > 나이 > 주거형태 > 지역 > 마감)
-function calculateRecommendScore(
-  welfare: WelfareItem,
-  profile: UserProfile
-): number {
-  let score = 0;
-  const userAge = new Date().getFullYear() - profile.birthYear;
-  const userSido = profile.region.sido;
-  const userSigungu = profile.region.sigungu;
-
-  const hasChildTag = welfare.tags.some(
-    (tag) =>
-      tag.includes("출산") ||
-      tag.includes("육아") ||
-      tag.includes("임신") ||
-      tag.includes("영유아") ||
-      tag.includes("보육")
-  );
-  const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
-  const isMarried = profile.householdType === "married";
-
-  // 1. 자녀
-  if (profile.hasChildren && hasChildTag) score += 120;
-  if (!profile.hasChildren && hasYouthTag) score += 120;
-
-  // 2. 결혼유무
-  if (isMarried && hasChildTag) score += 100;
-  if (!isMarried && hasYouthTag) score += 100;
-
-  // 3. 소득
-  if (welfare.eligibility.income) {
-    const incomePercent = welfare.eligibility.income.percent || 100;
-    if (profile.incomeLevel === "low" && incomePercent >= 50) score += 80;
-    else if (profile.incomeLevel === "medium" && incomePercent >= 100) score += 80;
-    else if (profile.incomeLevel === "high" && incomePercent > 100) score += 50;
-  } else {
-    score += 50;
-  }
-
-  // 4. 나이
-  const { min, max } = welfare.eligibility.age || {};
-  if (min !== undefined || max !== undefined) {
-    const minAge = min || 0;
-    const maxAge = max || 100;
-    if (userAge >= minAge && userAge <= maxAge) score += 70;
-    else score -= 60;
-  } else {
-    score += 30;
-  }
-
-  // 5. 주거형태 (주거 카테고리 또는 주거 관련 태그 + 유저 주거형태)
-  const isHousingWelfare =
-    welfare.category === "housing" ||
-    welfare.tags.some(
-      (tag) =>
-        tag.includes("주거") ||
-        tag.includes("임대") ||
-        tag.includes("전세") ||
-        tag.includes("월세") ||
-        tag.includes("자가") ||
-        tag.includes("무주택")
-    );
-  if (isHousingWelfare) {
-    const userHousing = profile.housingType;
-    if (userHousing === "rent" && (welfare.tags.some((t) => t.includes("월세") || t.includes("임대")) || welfare.category === "housing"))
-      score += 50;
-    if (userHousing === "jeonse" && (welfare.tags.some((t) => t.includes("전세")) || welfare.category === "housing"))
-      score += 50;
-    if (userHousing === "own" || userHousing === "with-parents") score += 30;
-    if (profile.isHouseless && isHousingWelfare) score += 40;
-  }
-
-  // 6. 지역 (이미 지역 필터 통과한 항목만 옴)
-  if (welfare.eligibility.region && welfare.eligibility.region.length > 0) {
-    const matchSido = welfare.eligibility.region.some(
-      (r) => userSido.includes(r) || r.includes(userSido) || r.includes(userSido.slice(0, 2))
-    );
-    const matchSigungu =
-      userSigungu &&
-      welfare.eligibility.region.some(
-        (r) => r.includes(userSigungu) || userSigungu.includes(r)
-      );
-    if (matchSigungu) score += 40;
-    else if (matchSido) score += 25;
-  }
-
-  // 7. 마감 임박
-  if (welfare.schedule.end) {
-    const daysUntil = Math.ceil(
-      (new Date(welfare.schedule.end).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysUntil > 0 && daysUntil <= 30) score += 10;
-  }
-
-  return score;
-}
 
 export default function HomePage() {
   const router = useRouter();

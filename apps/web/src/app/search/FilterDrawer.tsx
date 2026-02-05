@@ -8,6 +8,9 @@ import {
   benefitTypeLabels,
   scheduleTypeLabels,
   targetTraitOptions,
+  incomeFilterOptions,
+  householdSizeOptions,
+  getIncomeAmountLabel,
 } from "@welfaremate/data";
 import type { UserProfile } from "@welfaremate/types";
 
@@ -17,6 +20,8 @@ export interface SearchFilterState {
   benefitTypes: string[];
   scheduleTypes: string[];
   targetTraits: string[];
+  incomeMaxPercent: number | null;
+  householdSize: number;
 }
 
 const DEFAULT_FILTER: SearchFilterState = {
@@ -25,6 +30,8 @@ const DEFAULT_FILTER: SearchFilterState = {
   benefitTypes: [],
   scheduleTypes: [],
   targetTraits: [],
+  incomeMaxPercent: null,
+  householdSize: 1,
 };
 
 function toggleInList(list: string[], key: string): string[] {
@@ -38,6 +45,7 @@ type FilterDrawerProps = {
   profile: UserProfile | null;
   initialFilter: SearchFilterState;
   onApply: (filter: SearchFilterState) => void;
+  getDefaultFilter?: () => SearchFilterState;
 };
 
 export function FilterDrawer({
@@ -46,6 +54,7 @@ export function FilterDrawer({
   profile,
   initialFilter,
   onApply,
+  getDefaultFilter,
 }: FilterDrawerProps) {
   const [local, setLocal] = useState<SearchFilterState>(initialFilter);
 
@@ -68,10 +77,12 @@ export function FilterDrawer({
   };
 
   const handleReset = () => {
-    setLocal({
-      ...DEFAULT_FILTER,
-      regionMode: profile?.region?.sido ? "my" : "all",
-    });
+    setLocal(
+      getDefaultFilter?.() ?? {
+        ...DEFAULT_FILTER,
+        regionMode: profile?.region?.sido ? "my" : "all",
+      }
+    );
   };
 
   const categories = Object.entries(categoryLabels);
@@ -217,6 +228,64 @@ export function FilterDrawer({
                       }`}
                     >
                       {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="mb-6">
+                <h3 className="mb-2 text-sm font-medium text-gray-700">가구수</h3>
+                <div className="flex flex-wrap gap-2">
+                  {householdSizeOptions.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() =>
+                        setLocal((s) => ({ ...s, householdSize: value }))
+                      }
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                        local.householdSize === value
+                          ? "bg-primary-500 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              <section className="mb-6">
+                <h3 className="mb-2 text-sm font-medium text-gray-700">소득 기준 (중위소득)</h3>
+                <p className="mb-2 text-xs text-gray-500">
+                  선택한 가구수 기준 월 소득액 참고 (2025년 기준중위소득)
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {incomeFilterOptions.map(({ value, label }) => (
+                    <button
+                      key={value ?? "all"}
+                      type="button"
+                      onClick={() =>
+                        setLocal((s) => ({ ...s, incomeMaxPercent: value }))
+                      }
+                      className={`flex flex-col items-start rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${
+                        local.incomeMaxPercent === value
+                          ? "bg-primary-500 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      <span>{label}</span>
+                      {value != null && (
+                        <span
+                          className={
+                            local.incomeMaxPercent === value
+                              ? "text-xs opacity-90"
+                              : "text-xs text-gray-500"
+                          }
+                        >
+                          {getIncomeAmountLabel(value, local.householdSize)}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

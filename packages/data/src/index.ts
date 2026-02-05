@@ -194,6 +194,46 @@ export const targetTraitOptions: { value: string; label: string; keywords: strin
   { value: "multicultural", label: "다문화", keywords: ["다문화"] },
 ];
 
+const MEDIAN_INCOME_MONTHLY_2025: Record<number, number> = {
+  1: 2_392_013,
+  2: 3_931_722,
+  3: 5_026_427,
+  4: 6_098_833,
+  5: 7_114_239,
+  6: 8_081_645,
+  7: 9_041_051,
+};
+
+export const householdSizeOptions: { value: number; label: string }[] = [
+  { value: 1, label: "1인 가구" },
+  { value: 2, label: "2인 가구" },
+  { value: 3, label: "3인 가구" },
+  { value: 4, label: "4인 가구" },
+  { value: 5, label: "5인 가구" },
+  { value: 6, label: "6인 가구" },
+  { value: 7, label: "7인 이상" },
+];
+
+export function getIncomeAmountLabel(
+  percent: number,
+  householdSize: number
+): string {
+  const base = MEDIAN_INCOME_MONTHLY_2025[householdSize] ?? MEDIAN_INCOME_MONTHLY_2025[1];
+  const amount = Math.round((base * (percent / 100)) / 10_000);
+  const sizeLabel = householdSizeOptions.find((o) => o.value === householdSize)?.label ?? "1인 가구";
+  return `${sizeLabel} 기준 약 월 ${amount}만원 이하`;
+}
+
+export const incomeFilterOptions: {
+  value: number | null;
+  label: string;
+}[] = [
+  { value: null, label: "전체" },
+  { value: 60, label: "중위소득 60% 이하" },
+  { value: 100, label: "중위소득 100% 이하" },
+  { value: 150, label: "중위소득 150% 이하" },
+];
+
 // Document Links - 주요 서류 발급처 매핑
 export const documentLinks: Record<string, { url: string; source: string }> = {
   주민등록등본: {
