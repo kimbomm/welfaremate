@@ -149,7 +149,8 @@ pnpm generate
 ### 상세 재가공 (IDE에서만)
 
 - 크롤링·API 데이터를 WelfareAIData 형식으로 재가공하는 작업은 **CI에 포함하지 않고**, IDE에서 에이전트에게 요청한다.
-- **Sub-Agent 룰**: `.cursor/rules/welfare-detail-rework.mdc` — "상세 재가공해줘", "변경된 항목 재가공", "welfare AI 데이터 만들어줘" 등 요청 시 이 룰에 따라 **변경점 찾기 → 출력 형식 준수 → welfare-ai-sample.json 병합** 절차를 따른다.
+- **Sub-Agent 룰**: `.cursor/rules/welfare-detail-rework.mdc` — "상세 재가공해줘", "변경된 항목 재가공", "welfare AI 데이터 만들어줘" 등 요청 시 이 룰에 따라 **변경점 찾기 → 출력 형식 준수 → welfare-ai.json 병합** 절차를 따른다.
+- **출력**: 재가공 결과는 `data/welfare-ai.json`에 저장. `welfare-ai-sample.json`은 참조/샘플용일 뿐.
 - 일관된 형식과 절차를 유지하려면 해당 룰이 적용된 채로 요청하면 된다.
 
 ---

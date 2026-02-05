@@ -58,14 +58,19 @@ interface WelfareAIResult {
   items: Record<string, WelfareAIData>;
 }
 
-// AI 재가공 데이터 - 정적 import (ai-sample 우선, 없으면 enriched)
+// AI 재가공 데이터 - 정적 import (welfare-ai.json 우선, 없으면 welfare-ai-sample.json)
 let aiData: WelfareAIResult | null = null;
 let enrichedData: WelfareAIResult | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  aiData = require("../../../data/welfare-ai-sample.json") as WelfareAIResult;
+  aiData = require("../../../data/welfare-ai.json") as WelfareAIResult;
 } catch {
-  // AI 샘플 없음 - 무시
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    aiData = require("../../../data/welfare-ai-sample.json") as WelfareAIResult;
+  } catch {
+    // AI 데이터 없음 - 무시
+  }
 }
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
