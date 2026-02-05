@@ -1,5 +1,6 @@
 import type { WelfareItem } from "@welfaremate/types";
 import type { UserProfile } from "@welfaremate/types";
+import { getWelfareTargets } from "@welfaremate/data";
 
 /** 추천 태그 부여 기준. 이론상 상한 약 400~500대, 200 = 자녀/청년+결혼 등 2~3개 강한 매칭 */
 const RECOMMEND_THRESHOLD = 200;
@@ -23,6 +24,16 @@ export function isEligibleForRecommendation(
   const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
   const isYouthAge = userAge >= YOUTH_AGE_MIN && userAge <= YOUTH_AGE_MAX;
   if (hasYouthTag && !isYouthAge) return false;
+
+  const targets = getWelfareTargets(welfare.id);
+  if (targets) {
+    if (targets.isCareLeaverOnly && !profile.isCareLeaver) return false;
+    if (targets.isSingleParentOnly && !profile.isSingleParent) return false;
+    if (targets.requiresDisabled && !profile.isDisabled) return false;
+    // requiresBasicLivelihoodOrNearPoor / requiresStudent 는
+    // 추후 온보딩 필드 확장 후 연동
+  }
+
   return true;
 }
 

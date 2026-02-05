@@ -126,6 +126,7 @@ export interface UserProfile {
   isVeteran: boolean;
   isMulticultural: boolean;
   isSingleParent: boolean;
+  isCareLeaver: boolean;
 }
 
 // Config Types

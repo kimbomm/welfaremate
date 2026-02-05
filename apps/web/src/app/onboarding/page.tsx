@@ -14,7 +14,7 @@ import {
   HOUSING_OPTIONS,
 } from "@/lib/constants";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 interface FormData {
   birthYear: number;
@@ -22,11 +22,15 @@ interface FormData {
   sigungu: string;
   employment: string;
   incomeLevel: string;
-   householdSize: number;
+  householdSize: number;
   householdType: string;
   hasChildren: boolean;
   housingType: string;
   isHouseless: boolean;
+  isDisabled: boolean;
+  isMulticultural: boolean;
+  isSingleParent: boolean;
+  isCareLeaver: boolean;
 }
 
 const currentYear = new Date().getFullYear();
@@ -46,6 +50,10 @@ export default function OnboardingPage() {
     hasChildren: false,
     housingType: "",
     isHouseless: false,
+    isDisabled: false,
+    isMulticultural: false,
+    isSingleParent: false,
+    isCareLeaver: false,
   });
 
   const updateForm = (key: keyof FormData, value: unknown) => {
@@ -62,13 +70,15 @@ export default function OnboardingPage() {
         return formData.householdType;
       case 4:
         return formData.housingType;
+      case 5:
+        return true;
       default:
         return false;
     }
   };
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep((prev) => (prev + 1) as Step);
     }
   };
@@ -98,10 +108,11 @@ export default function OnboardingPage() {
       hasChildren: formData.hasChildren,
       housingType: formData.housingType as HousingType,
       isHouseless: formData.isHouseless,
-      isDisabled: false,
+      isDisabled: formData.isDisabled,
       isVeteran: false,
-      isMulticultural: false,
-      isSingleParent: false,
+      isMulticultural: formData.isMulticultural,
+      isSingleParent: formData.isSingleParent,
+      isCareLeaver: formData.isCareLeaver,
     });
     router.push("/");
   };
@@ -133,7 +144,7 @@ export default function OnboardingPage() {
             <ChevronLeft className="h-6 w-6 text-gray-600" />
           </button>
           <div className="flex gap-1.5">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 w-8 rounded-full transition-colors ${
@@ -170,6 +181,9 @@ export default function OnboardingPage() {
             {step === 4 && (
               <StepFour formData={formData} updateForm={updateForm} />
             )}
+            {step === 5 && (
+              <StepFive formData={formData} updateForm={updateForm} />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -177,12 +191,12 @@ export default function OnboardingPage() {
       {/* Footer */}
       <div className="sticky bottom-0 border-t bg-white p-5">
         <button
-          onClick={step === 4 ? handleSubmit : handleNext}
+          onClick={step === 5 ? handleSubmit : handleNext}
           disabled={!canProceed()}
           className="flex h-14 w-full items-center justify-center rounded-xl bg-primary-500 font-medium text-white transition-all active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400"
         >
-          {step === 4 ? "시작하기" : "다음"}
-          {step < 4 && <ChevronRight className="ml-1 h-5 w-5" />}
+          {step === 5 ? "시작하기" : "다음"}
+          {step < 5 && <ChevronRight className="ml-1 h-5 w-5" />}
         </button>
       </div>
     </div>
@@ -541,6 +555,153 @@ function StepFour({
           💡 입력하신 정보는 기기에만 저장되며, 서버로 전송되지 않습니다.
         </p>
       </div>
+    </div>
+  );
+}
+
+// Step 5: 추가 정보 (취약·특수 대상)
+function StepFive({
+  formData,
+  updateForm,
+}: {
+  formData: FormData;
+  updateForm: (key: keyof FormData, value: unknown) => void;
+}) {
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - formData.birthYear;
+  const showCareLeaver = age >= 18 && age <= 34;
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">추가 정보를 알려주세요</h1>
+        <p className="mt-2 text-gray-500">
+          취약·특수 대상 복지 혜택을 더 정확하게 찾는 데 활용돼요
+        </p>
+      </div>
+
+      {/* 한부모가구 여부 */}
+      <div>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          한부모가구이신가요?
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => updateForm("isSingleParent", true)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              formData.isSingleParent
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            예
+          </button>
+          <button
+            onClick={() => updateForm("isSingleParent", false)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              !formData.isSingleParent
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            아니오
+          </button>
+        </div>
+      </div>
+
+      {/* 장애 여부 */}
+      <div>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          등록 장애가 있으신가요?
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => updateForm("isDisabled", true)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              formData.isDisabled
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            예
+          </button>
+          <button
+            onClick={() => updateForm("isDisabled", false)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              !formData.isDisabled
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            아니오
+          </button>
+        </div>
+      </div>
+
+      {/* 다문화가정 여부 */}
+      <div>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          다문화가정이신가요?
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => updateForm("isMulticultural", true)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              formData.isMulticultural
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            예
+          </button>
+          <button
+            onClick={() => updateForm("isMulticultural", false)}
+            className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+              !formData.isMulticultural
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            아니오
+          </button>
+        </div>
+      </div>
+
+      {/* 자립준비청년/보호종료 여부 */}
+      {showCareLeaver && (
+        <div>
+          <label className="mb-3 block text-sm font-medium text-gray-700">
+            아동복지시설·가정위탁 보호 종료 후 자립을 준비 중인 자립준비청년(보호종료아동)에
+            해당하시나요?
+          </label>
+          <p className="mb-3 text-xs text-gray-500">
+            아동양육시설·공동생활가정·가정위탁 등에서 보호를 받다가 퇴소한 뒤 자립을 준비 중인
+            청년을 말해요.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => updateForm("isCareLeaver", true)}
+              className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+                formData.isCareLeaver
+                  ? "border-primary-500 bg-primary-50 text-primary-600"
+                  : "border-gray-200 text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              예
+            </button>
+            <button
+              onClick={() => updateForm("isCareLeaver", false)}
+              className={`flex h-14 items-center justify-center rounded-xl border transition-all ${
+                !formData.isCareLeaver
+                  ? "border-primary-500 bg-primary-50 text-primary-600"
+                  : "border-gray-200 text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              아니오
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

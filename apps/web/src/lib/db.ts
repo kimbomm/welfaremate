@@ -23,6 +23,7 @@ export interface UserProfile {
   isVeteran: boolean;
   isMulticultural: boolean;
   isSingleParent: boolean;
+  isCareLeaver: boolean;
 }
 
 // Bookmark 타입

@@ -79,6 +79,29 @@ try {
   // 규칙 기반 보강 데이터 없음 - 무시
 }
 
+// 협소 대상 플래그 (welfare-targets.json)
+export interface WelfareTargetFlags {
+  isCareLeaverOnly?: boolean;
+  isSingleParentOnly?: boolean;
+  requiresBasicLivelihoodOrNearPoor?: boolean;
+  requiresStudent?: boolean;
+  requiresDisabled?: boolean;
+}
+
+interface WelfareTargetsFile {
+  version: string;
+  generatedAt: string;
+  items: Record<string, WelfareTargetFlags>;
+}
+
+let targetsData: WelfareTargetsFile | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  targetsData = require("../../../data/welfare-targets.json") as WelfareTargetsFile;
+} catch {
+  // 타깃 플래그 데이터 없음 - 무시
+}
+
 interface SnapshotFile {
   version: string;
   generatedAt: string;
@@ -169,6 +192,10 @@ export interface WelfareItemWithDetail extends WelfareItem {
 
 export function getWelfareAI(id: string): WelfareAIData | undefined {
   return aiData?.items[id] ?? enrichedData?.items[id];
+}
+
+export function getWelfareTargets(id: string): WelfareTargetFlags | undefined {
+  return targetsData?.items[id];
 }
 
 export function getWelfareWithDetail(id: string): WelfareItemWithDetail | undefined {

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "enrich": "tsx src/index.ts",
-    "enrich:sample": "tsx src/index.ts --sample"
+    "enrich:sample": "tsx src/index.ts --sample",
+    "targets": "tsx src/targets.ts"
   },
   "dependencies": {
     "@welfaremate/types": "workspace:*"
