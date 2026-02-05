@@ -1,12 +1,9 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-02-05T07:54:42.966Z",
+  "generatedAt": "2026-02-05T23:21:50.993Z",
   "items": {
     "welfare_000000465790": {
       "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_105100000001": {
-      "requiresDisabled": true
     },
     "welfare_119200000176": {
       "requiresStudent": true
@@ -118,11 +115,6 @@
       "requiresDisabled": true
     },
     "welfare_137100000235": {
-      "requiresDisabled": true
-    },
-    "welfare_137100000236": {
-      "isSingleParentOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
     "welfare_138300000017": {
@@ -624,6 +616,9 @@
       "requiresStudent": true,
       "requiresDisabled": true
     },
+    "welfare_307000000178": {
+      "requiresDisabled": true
+    },
     "welfare_307000000180": {
       "requiresDisabled": true
     },
@@ -664,6 +659,10 @@
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
+    "welfare_308000000124": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
     "welfare_309000000126": {
       "isSingleParentOnly": true
     },
@@ -687,6 +686,9 @@
     },
     "welfare_309000000137": {
       "requiresStudent": true
+    },
+    "welfare_310000000101": {
+      "isCareLeaverOnly": true
     },
     "welfare_310000000109": {
       "requiresDisabled": true
@@ -1062,9 +1064,6 @@
     "welfare_322000000102": {
       "requiresDisabled": true
     },
-    "welfare_322000000111": {
-      "requiresDisabled": true
-    },
     "welfare_322000000112": {
       "requiresDisabled": true
     },
@@ -1121,6 +1120,9 @@
       "requiresStudent": true
     },
     "welfare_330000000112": {
+      "requiresStudent": true
+    },
+    "welfare_330000000115": {
       "requiresStudent": true
     },
     "welfare_330000000118": {
@@ -1243,6 +1245,9 @@
     "welfare_342000000108": {
       "isSingleParentOnly": true
     },
+    "welfare_342000000110": {
+      "isCareLeaverOnly": true
+    },
     "welfare_343000000103": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
@@ -1251,6 +1256,9 @@
     },
     "welfare_343000000117": {
       "isSingleParentOnly": true,
+      "requiresDisabled": true
+    },
+    "welfare_343000000120": {
       "requiresDisabled": true
     },
     "welfare_344000000101": {
@@ -1737,6 +1745,9 @@
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
+    "welfare_386000000135": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
     "welfare_390000000101": {
       "isSingleParentOnly": true,
       "requiresDisabled": true
@@ -1879,6 +1890,9 @@
     "welfare_398000000103": {
       "requiresDisabled": true
     },
+    "welfare_398000000107": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
     "welfare_398000000109": {
       "isSingleParentOnly": true
     },
@@ -1926,12 +1940,6 @@
     },
     "welfare_401000000116": {
       "requiresDisabled": true
-    },
-    "welfare_401000000490": {
-      "isSingleParentOnly": true
-    },
-    "welfare_401000000491": {
-      "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_401000000495": {
       "requiresDisabled": true
@@ -2041,13 +2049,6 @@
     "welfare_406000000111": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
-    "welfare_406000000113": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_406000000118": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
     "welfare_406000000126": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
@@ -2093,9 +2094,6 @@
     "welfare_408000000550": {
       "isSingleParentOnly": true,
       "requiresDisabled": true
-    },
-    "welfare_408000000562": {
-      "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_409000000103": {
       "requiresBasicLivelihoodOrNearPoor": true
@@ -2406,9 +2404,6 @@
       "requiresDisabled": true
     },
     "welfare_439000000852": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_439000000853": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_439000000859": {
@@ -3572,6 +3567,10 @@
       "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true
     },
+    "welfare_536000000119": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
     "welfare_536000000609": {
       "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true,
@@ -3716,11 +3715,6 @@
       "requiresStudent": true
     },
     "welfare_545000000110": {
-      "requiresDisabled": true
-    },
-    "welfare_546000000101": {
-      "isSingleParentOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
     "welfare_546000000115": {
@@ -3869,9 +3863,6 @@
     },
     "welfare_558000000304": {
       "requiresStudent": true
-    },
-    "welfare_559000000115": {
-      "requiresDisabled": true
     },
     "welfare_559000000117": {
       "requiresDisabled": true
@@ -4069,6 +4060,9 @@
     "welfare_571000000215": {
       "requiresStudent": true
     },
+    "welfare_571000000217": {
+      "requiresStudent": true
+    },
     "welfare_611000000111": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
@@ -4116,9 +4110,6 @@
       "requiresDisabled": true
     },
     "welfare_611000019620": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_611000019624": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_611000019633": {
@@ -4229,10 +4220,6 @@
     "welfare_627000000727": {
       "requiresStudent": true
     },
-    "welfare_627000000739": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
     "welfare_627000000741": {
       "requiresDisabled": true
     },
@@ -4269,6 +4256,10 @@
     "welfare_628000000149": {
       "requiresDisabled": true
     },
+    "welfare_628000000150": {
+      "isSingleParentOnly": true,
+      "requiresDisabled": true
+    },
     "welfare_628000000154": {
       "requiresDisabled": true
     },
@@ -4283,6 +4274,9 @@
     },
     "welfare_628000000163": {
       "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_628000000164": {
+      "requiresDisabled": true
     },
     "welfare_628000000741": {
       "requiresDisabled": true
@@ -4443,10 +4437,6 @@
     "welfare_630000000160": {
       "isCareLeaverOnly": true
     },
-    "welfare_630000000659": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
     "welfare_630000000661": {
       "requiresStudent": true
     },
@@ -4483,10 +4473,6 @@
     },
     "welfare_631000000133": {
       "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_631000000714": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
     },
     "welfare_631000000736": {
       "requiresDisabled": true
@@ -4558,6 +4544,10 @@
       "requiresDisabled": true
     },
     "welfare_641000000663": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_641000000692": {
+      "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_641000000694": {
@@ -4695,6 +4685,11 @@
     "welfare_645000000115": {
       "requiresDisabled": true
     },
+    "welfare_645000000120": {
+      "isSingleParentOnly": true,
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
     "welfare_645000000136": {
       "requiresStudent": true
     },
@@ -4810,6 +4805,9 @@
     },
     "welfare_648000001114": {
       "requiresDisabled": true
+    },
+    "welfare_648000001117": {
+      "requiresStudent": true
     },
     "welfare_648000001122": {
       "requiresDisabled": true
@@ -4963,10 +4961,6 @@
       "requiresDisabled": true
     },
     "welfare_715000000220": {
-      "isSingleParentOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_715000000221": {
       "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true
     },
@@ -5285,11 +5279,6 @@
     "welfare_999000000073": {
       "requiresDisabled": true
     },
-    "welfare_999000000090": {
-      "isCareLeaverOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresStudent": true
-    },
     "welfare_999000000091": {
       "requiresDisabled": true
     },
@@ -5424,9 +5413,6 @@
       "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_B55252500002": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_B55252900010": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
     "welfare_B55252900201": {
@@ -5602,10 +5588,6 @@
     "welfare_B55462500002": {
       "requiresStudent": true
     },
-    "welfare_GES000000120": {
-      "isCareLeaverOnly": true,
-      "requiresDisabled": true
-    },
     "welfare_GES000000130": {
       "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true
@@ -5659,6 +5641,9 @@
       "requiresDisabled": true
     },
     "welfare_O00001400004": {
+      "requiresDisabled": true
+    },
+    "welfare_O00001400005": {
       "requiresDisabled": true
     },
     "welfare_O00002300001": {
@@ -5984,9 +5969,6 @@
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
-    "welfare_O00009400001": {
-      "requiresDisabled": true
-    },
     "welfare_O00009700001": {
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
@@ -6291,18 +6273,7 @@
     "welfare_O00020400006": {
       "requiresDisabled": true
     },
-    "welfare_O00020400009": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
-    "welfare_O00020400013": {
-      "requiresDisabled": true
-    },
     "welfare_O00020400015": {
-      "requiresDisabled": true
-    },
-    "welfare_O00020600003": {
-      "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
     "welfare_O00020700001": {
@@ -7151,6 +7122,9 @@
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
+    "welfare_O00051500003": {
+      "isSingleParentOnly": true
+    },
     "welfare_O00051900001": {
       "requiresStudent": true
     },
@@ -7605,11 +7579,6 @@
     "welfare_O00109100005": {
       "requiresBasicLivelihoodOrNearPoor": true
     },
-    "welfare_O00110600001": {
-      "isSingleParentOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
     "welfare_O00110900001": {
       "requiresStudent": true,
       "requiresDisabled": true
@@ -7773,10 +7742,6 @@
     "welfare_SD0000002255": {
       "requiresDisabled": true
     },
-    "welfare_SD0000002815": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
     "welfare_SD0000003857": {
       "requiresDisabled": true
     },
@@ -7787,11 +7752,6 @@
     },
     "welfare_SD0000004184": {
       "requiresDisabled": true
-    },
-    "welfare_SD0000004508": {
-      "isCareLeaverOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresStudent": true
     },
     "welfare_SD0000005037": {
       "requiresDisabled": true
@@ -7955,56 +7915,72 @@
     "welfare_WII000001360": {
       "requiresStudent": true
     },
-    "welfare_571000000217": {
-      "requiresStudent": true
-    },
-    "welfare_O00001400005": {
+    "welfare_105100000001": {
       "requiresDisabled": true
     },
-    "welfare_307000000178": {
-      "requiresDisabled": true
-    },
-    "welfare_308000000124": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
-    "welfare_330000000115": {
-      "requiresStudent": true
-    },
-    "welfare_343000000120": {
-      "requiresDisabled": true
-    },
-    "welfare_386000000135": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_398000000107": {
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_536000000119": {
-      "requiresBasicLivelihoodOrNearPoor": true,
-      "requiresDisabled": true
-    },
-    "welfare_628000000150": {
-      "isSingleParentOnly": true,
-      "requiresDisabled": true
-    },
-    "welfare_628000000164": {
-      "requiresDisabled": true
-    },
-    "welfare_641000000692": {
-      "isSingleParentOnly": true,
-      "requiresBasicLivelihoodOrNearPoor": true
-    },
-    "welfare_645000000120": {
+    "welfare_137100000236": {
       "isSingleParentOnly": true,
       "requiresBasicLivelihoodOrNearPoor": true,
       "requiresDisabled": true
     },
-    "welfare_648000001117": {
+    "welfare_408000000562": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_439000000853": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_611000019624": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_627000000739": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_630000000659": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_631000000714": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_999000000090": {
+      "isCareLeaverOnly": true,
+      "requiresBasicLivelihoodOrNearPoor": true,
       "requiresStudent": true
     },
-    "welfare_O00051500003": {
-      "isSingleParentOnly": true
+    "welfare_B55252900010": {
+      "requiresBasicLivelihoodOrNearPoor": true
+    },
+    "welfare_GES000000120": {
+      "isCareLeaverOnly": true,
+      "requiresDisabled": true
+    },
+    "welfare_O00009400001": {
+      "requiresDisabled": true
+    },
+    "welfare_O00020400009": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_O00020400013": {
+      "requiresDisabled": true
+    },
+    "welfare_O00020600003": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_O00086200001": {
+      "requiresStudent": true
+    },
+    "welfare_SD0000002815": {
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresDisabled": true
+    },
+    "welfare_SD0000004508": {
+      "isCareLeaverOnly": true,
+      "requiresBasicLivelihoodOrNearPoor": true,
+      "requiresStudent": true
     }
   }
 }

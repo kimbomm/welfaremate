@@ -46,9 +46,9 @@ function buildFlags(text: string): WelfareTargetFlags {
   const t = text.replace(/\s+/g, " ");
   const flags: WelfareTargetFlags = {};
 
-  // 자립준비청년/보호종료아동 전용
+  // 자립준비청년/보호종료아동·청소년 전용
   if (
-    /보호종료아동|자립준비청년|시설\s*퇴소청소년|가정위탁\s*보호종료/.test(t)
+    /보호종료아동|보호종료청소년|자립준비청년|시설\s*퇴소청소년|만기\s*퇴소|가정위탁\s*보호종료/.test(t)
   ) {
     flags.isCareLeaverOnly = true;
   }
