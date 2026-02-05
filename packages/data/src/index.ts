@@ -258,6 +258,7 @@ const MEDIAN_INCOME_MONTHLY_2025: Record<number, number> = {
 };
 
 export const householdSizeOptions: { value: number; label: string }[] = [
+  { value: 0, label: "전체" },
   { value: 1, label: "1인 가구" },
   { value: 2, label: "2인 가구" },
   { value: 3, label: "3인 가구" },
@@ -271,9 +272,13 @@ export function getIncomeAmountLabel(
   percent: number,
   householdSize: number
 ): string {
-  const base = MEDIAN_INCOME_MONTHLY_2025[householdSize] ?? MEDIAN_INCOME_MONTHLY_2025[1];
+  const sizeForAmount = householdSize >= 1 && householdSize <= 7 ? householdSize : 1;
+  const base = MEDIAN_INCOME_MONTHLY_2025[sizeForAmount] ?? MEDIAN_INCOME_MONTHLY_2025[1];
   const amount = Math.round((base * (percent / 100)) / 10_000);
-  const sizeLabel = householdSizeOptions.find((o) => o.value === householdSize)?.label ?? "1인 가구";
+  const sizeLabel =
+    householdSize >= 1 && householdSize <= 7
+      ? (householdSizeOptions.find((o) => o.value === householdSize)?.label ?? "1인 가구")
+      : "1인 가구";
   return `${sizeLabel} 기준 약 월 ${amount}만원 이하`;
 }
 

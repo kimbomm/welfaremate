@@ -12,6 +12,7 @@ import {
   getBanner,
   getCategoryLabel,
   formatDeadline,
+  getDaysUntil,
 } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
 
@@ -55,7 +56,11 @@ export default function HomePage() {
         return matchSido || matchSigungu;
       });
     });
-    const scored = regionFiltered.map((welfare) => ({
+    const notClosed = regionFiltered.filter((w) => {
+      const days = getDaysUntil(w.schedule?.end);
+      return days === null || days >= 0;
+    });
+    const scored = notClosed.map((welfare) => ({
       welfare,
       score: calculateRecommendScore(welfare, profile),
     }));

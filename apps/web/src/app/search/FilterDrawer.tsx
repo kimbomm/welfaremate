@@ -235,24 +235,24 @@ export function FilterDrawer({
 
               <section className="mb-6">
                 <h3 className="mb-2 text-sm font-medium text-gray-700">가구수</h3>
-                <div className="flex flex-wrap gap-2">
+                <select
+                  value={local.householdSize}
+                  onChange={(e) =>
+                    setLocal((s) => ({
+                      ...s,
+                      householdSize: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem 1.25rem" }}
+                  aria-label="가구수 선택"
+                >
                   {householdSizeOptions.map(({ value, label }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() =>
-                        setLocal((s) => ({ ...s, householdSize: value }))
-                      }
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                        local.householdSize === value
-                          ? "bg-primary-500 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
+                    <option key={value} value={value}>
                       {label}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
               </section>
 
               <section className="mb-6">
@@ -260,60 +260,59 @@ export function FilterDrawer({
                 <p className="mb-2 text-xs text-gray-500">
                   선택한 가구수 기준 월 소득액 참고 (2025년 기준중위소득)
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <select
+                  value={local.incomeMaxPercent ?? "all"}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLocal((s) => ({
+                      ...s,
+                      incomeMaxPercent: v === "all" ? null : Number(v),
+                    }));
+                  }}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem 1.25rem" }}
+                  aria-label="소득 기준 선택"
+                >
                   {incomeFilterOptions.map(({ value, label }) => (
-                    <button
-                      key={value ?? "all"}
-                      type="button"
-                      onClick={() =>
-                        setLocal((s) => ({ ...s, incomeMaxPercent: value }))
-                      }
-                      className={`flex flex-col items-start rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${
-                        local.incomeMaxPercent === value
-                          ? "bg-primary-500 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      <span>{label}</span>
-                      {value != null && (
-                        <span
-                          className={
-                            local.incomeMaxPercent === value
-                              ? "text-xs opacity-90"
-                              : "text-xs text-gray-500"
-                          }
-                        >
-                          {getIncomeAmountLabel(value, local.householdSize)}
-                        </span>
-                      )}
-                    </button>
+                    <option key={value ?? "all"} value={value ?? "all"}>
+                      {label}
+                    </option>
                   ))}
-                </div>
+                </select>
+                {local.incomeMaxPercent != null && (
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    {getIncomeAmountLabel(
+                      local.incomeMaxPercent,
+                      local.householdSize >= 1 && local.householdSize <= 7
+                        ? local.householdSize
+                        : 1
+                    )}
+                  </p>
+                )}
               </section>
 
               <section>
                 <h3 className="mb-2 text-sm font-medium text-gray-700">대상 특성</h3>
-                <div className="flex flex-wrap gap-2">
+                <select
+                  value={local.targetTraits[0] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLocal((s) => ({
+                      ...s,
+                      targetTraits: v ? [v] : [],
+                    }));
+                  }}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem 1.25rem" }}
+                  aria-label="대상 특성 선택"
+                >
+                  <option value="">전체</option>
                   {targetTraitOptions.map(({ value, label }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() =>
-                        setLocal((s) => ({
-                          ...s,
-                          targetTraits: toggleInList(s.targetTraits, value),
-                        }))
-                      }
-                      className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                        local.targetTraits.includes(value)
-                          ? "bg-primary-500 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
+                    <option key={value} value={value}>
                       {label}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
               </section>
             </div>
 

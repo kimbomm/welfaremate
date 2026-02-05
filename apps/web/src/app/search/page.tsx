@@ -203,11 +203,17 @@ export default function SearchPage() {
         item.eligibility.region.some((r) => r.includes(profile.region.sido)));
     if (sortBy === "recommend") {
       list.sort((a, b) => {
+        const dA = getDaysUntil(a.schedule?.end);
+        const dB = getDaysUntil(b.schedule?.end);
+        const closedA = dA !== null && dA < 0 ? 1 : 0;
+        const closedB = dB !== null && dB < 0 ? 1 : 0;
         const recA =
           isRecommended(a, profile) && regionMatchesMyArea(a) ? 0 : 1;
         const recB =
           isRecommended(b, profile) && regionMatchesMyArea(b) ? 0 : 1;
-        if (recA !== recB) return recA - recB;
+        const rankA = closedA * 2 + recA;
+        const rankB = closedB * 2 + recB;
+        if (rankA !== rankB) return rankA - rankB;
         return getDaysForSort(a) - getDaysForSort(b);
       });
     } else if (sortBy === "deadline") {
