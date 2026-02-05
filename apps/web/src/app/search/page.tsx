@@ -10,31 +10,63 @@ import {
   Home,
   Heart,
   Sparkles,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   getWelfareList,
-  filterByCategory,
   getCategoryLabel,
   formatDeadline,
-  categoryLabels,
+  targetTraitOptions,
 } from "@welfaremate/data";
 import type { UserProfile } from "@welfaremate/types";
 import { getProfile } from "@/lib/db";
+import {
+  FilterDrawer,
+  type SearchFilterState,
+} from "@/app/search/FilterDrawer";
 
 const ITEMS_PER_PAGE = 20;
+
+function matchesTargetTraits(
+  item: { tags: string[]; eligibility: { conditions: string[] } },
+  selectedTraits: string[]
+): boolean {
+  if (selectedTraits.length === 0) return true;
+  const text = [
+    ...item.tags,
+    ...item.eligibility.conditions,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return selectedTraits.some((value) => {
+    const option = targetTraitOptions.find((o) => o.value === value);
+    if (!option) return false;
+    return option.keywords.some((kw) => text.includes(kw.toLowerCase()));
+  });
+}
 
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
-    new Set()
-  );
+  const [filterState, setFilterState] = useState<SearchFilterState>({
+    regionMode: "all",
+    selectedCategories: [],
+    benefitTypes: [],
+    scheduleTypes: [],
+    targetTraits: [],
+  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getProfile().then((p) => setProfile(p ?? null));
+    getProfile().then((p) => {
+      setProfile(p ?? null);
+      if (p?.region?.sido) {
+        setFilterState((prev) => ({ ...prev, regionMode: "my" }));
+      }
+    });
   }, []);
 
   const allWelfare = getWelfareList();
@@ -42,8 +74,7 @@ export default function SearchPage() {
   const filteredResults = useMemo(() => {
     let results = allWelfare;
 
-    // 지역 필터 (프로필 기반)
-    if (profile?.region?.sido) {
+    if (filterState.regionMode === "my" && profile?.region?.sido) {
       const userRegion = profile.region.sido;
       results = results.filter((item) => {
         if (!item.eligibility.region || item.eligibility.region.length === 0) {
@@ -53,12 +84,27 @@ export default function SearchPage() {
       });
     }
 
-    // 카테고리 필터 (선택된 것만)
-    if (selectedCategories.size > 0) {
-      results = results.filter((item) => selectedCategories.has(item.category));
+    if (filterState.selectedCategories.length > 0) {
+      const set = new Set(filterState.selectedCategories);
+      results = results.filter((item) => set.has(item.category));
     }
 
-    // 검색어 필터
+    if (filterState.benefitTypes.length > 0) {
+      const set = new Set(filterState.benefitTypes);
+      results = results.filter((item) => set.has(item.benefit.type));
+    }
+
+    if (filterState.scheduleTypes.length > 0) {
+      const set = new Set(filterState.scheduleTypes);
+      results = results.filter((item) => set.has(item.schedule.type));
+    }
+
+    if (filterState.targetTraits.length > 0) {
+      results = results.filter((item) =>
+        matchesTargetTraits(item, filterState.targetTraits)
+      );
+    }
+
     if (query.trim()) {
       const lowerQuery = query.toLowerCase();
       results = results.filter(
@@ -70,27 +116,23 @@ export default function SearchPage() {
     }
 
     return results;
-  }, [query, selectedCategories, allWelfare, profile]);
+  }, [query, filterState, allWelfare, profile]);
 
-  // 표시할 결과
   const displayedResults = filteredResults.slice(0, displayCount);
   const hasMore = displayCount < filteredResults.length;
 
-  // 카테고리 토글
-  const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(category)) {
-        newSet.delete(category);
-      } else {
-        newSet.add(category);
-      }
-      return newSet;
-    });
-    setDisplayCount(ITEMS_PER_PAGE); // 필터 변경 시 리셋
+  const handleApplyFilter = (next: SearchFilterState) => {
+    setFilterState(next);
+    setDisplayCount(ITEMS_PER_PAGE);
   };
 
-  // 검색어 변경 시 리셋
+  const filterCount =
+    (filterState.selectedCategories.length > 0 ? 1 : 0) +
+    (filterState.benefitTypes.length > 0 ? 1 : 0) +
+    (filterState.scheduleTypes.length > 0 ? 1 : 0) +
+    (filterState.targetTraits.length > 0 ? 1 : 0) +
+    (filterState.regionMode === "my" && profile?.region?.sido ? 1 : 0);
+
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
   }, [query]);
@@ -117,52 +159,60 @@ export default function SearchPage() {
     return () => observer.disconnect();
   }, [filteredResults.length]);
 
-  const categories = Object.entries(categoryLabels);
-  const isSearching = query.trim().length > 0 || selectedCategories.size > 0;
+  const isSearching =
+    query.trim().length > 0 || filterCount > 0;
 
   return (
     <main className="flex min-h-screen flex-col pb-20">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-white px-5 py-4">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="복지 혜택 검색"
-            className="h-12 w-full rounded-xl border border-gray-200 pl-12 pr-10 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-            autoFocus
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
-            >
-              <X className="h-5 w-5 text-gray-400" />
-            </button>
-          )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="복지 혜택 검색"
+              className="h-12 w-full rounded-xl border border-gray-200 pl-12 pr-10 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              autoFocus
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2"
+                aria-label="검색어 지우기"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+              filterCount > 0
+                ? "border-primary-500 bg-primary-50 text-primary-500"
+                : "border-gray-200 bg-white text-gray-600"
+            }`}
+            aria-label="필터"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            {filterCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-500 px-1.5 text-xs font-medium text-white">
+                {filterCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
-      {/* Categories - 토글 방식 */}
-      <div className="border-b bg-white px-5 py-3">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {categories.map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => toggleCategory(key)}
-              className={`flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                selectedCategories.has(key)
-                  ? "bg-primary-500 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <FilterDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        profile={profile}
+        initialFilter={filterState}
+        onApply={handleApplyFilter}
+      />
 
       {/* Content */}
       <div className="flex-1 px-5 py-4">
@@ -182,7 +232,7 @@ export default function SearchPage() {
             <p className="mb-6 text-center text-gray-500">
               키워드로 검색하거나
               <br />
-              카테고리를 선택해보세요
+              필터에서 조건을 선택해보세요
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {["청년 월세", "출산 지원", "취업 지원", "교육비"].map(

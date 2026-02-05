@@ -174,6 +174,26 @@ export function getCategoryLabel(category: string): string {
   return categoryLabels[category] || category;
 }
 
+export const benefitTypeLabels: Record<string, string> = {
+  money: "현금",
+  service: "서비스",
+  discount: "할인",
+  other: "기타",
+};
+
+export const scheduleTypeLabels: Record<string, string> = {
+  always: "상시",
+  period: "기간 한정",
+};
+
+export const targetTraitOptions: { value: string; label: string; keywords: string[] }[] = [
+  { value: "youth", label: "청년", keywords: ["청년"] },
+  { value: "singleParent", label: "한부모", keywords: ["한부모"] },
+  { value: "disabled", label: "장애인", keywords: ["장애인", "장애"] },
+  { value: "veteran", label: "국가유공자", keywords: ["국가유공자", "참전", "보훈"] },
+  { value: "multicultural", label: "다문화", keywords: ["다문화"] },
+];
+
 // Document Links - 주요 서류 발급처 매핑
 export const documentLinks: Record<string, { url: string; source: string }> = {
   주민등록등본: {
