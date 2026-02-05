@@ -4,6 +4,28 @@ import type { UserProfile } from "@welfaremate/types";
 /** 추천 태그 부여 기준. 이론상 상한 약 400~500대, 200 = 자녀/청년+결혼 등 2~3개 강한 매칭 */
 const RECOMMEND_THRESHOLD = 200;
 
+/** 청년 혜택: 청년 태그 = 청년 나이 AND 조건 (정책상 흔한 구간) */
+const YOUTH_AGE_MIN = 19;
+const YOUTH_AGE_MAX = 34;
+
+/** 나이 등 핵심 자격 불일치 시 추천 후보에서 제외 */
+export function isEligibleForRecommendation(
+  welfare: WelfareItem,
+  profile: UserProfile
+): boolean {
+  const userAge = new Date().getFullYear() - profile.birthYear;
+  const { min, max } = welfare.eligibility.age || {};
+  if (min !== undefined || max !== undefined) {
+    const minAge = min ?? 0;
+    const maxAge = max ?? 100;
+    if (userAge < minAge || userAge > maxAge) return false;
+  }
+  const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
+  const isYouthAge = userAge >= YOUTH_AGE_MIN && userAge <= YOUTH_AGE_MAX;
+  if (hasYouthTag && !isYouthAge) return false;
+  return true;
+}
+
 export function calculateRecommendScore(
   welfare: WelfareItem,
   profile: UserProfile
@@ -23,30 +45,26 @@ export function calculateRecommendScore(
   );
   const hasYouthTag = welfare.tags.some((tag) => tag.includes("청년"));
   const isMarried = profile.householdType === "married";
+  const isYouthAge = userAge >= YOUTH_AGE_MIN && userAge <= YOUTH_AGE_MAX;
 
   if (profile.hasChildren && hasChildTag) score += 120;
-  if (!profile.hasChildren && hasYouthTag) score += 120;
+  if (!profile.hasChildren && hasYouthTag && isYouthAge) score += 120;
 
   if (isMarried && hasChildTag) score += 100;
-  if (!isMarried && hasYouthTag) score += 100;
+  if (!isMarried && hasYouthTag && isYouthAge) score += 100;
 
   if (welfare.eligibility.income) {
     const incomePercent = welfare.eligibility.income.percent || 100;
     if (profile.incomeLevel === "low" && incomePercent >= 50) score += 80;
     else if (profile.incomeLevel === "medium" && incomePercent >= 100) score += 80;
     else if (profile.incomeLevel === "high" && incomePercent > 100) score += 50;
-  } else {
-    score += 50;
   }
 
   const { min, max } = welfare.eligibility.age || {};
   if (min !== undefined || max !== undefined) {
-    const minAge = min || 0;
-    const maxAge = max || 100;
+    const minAge = min ?? 0;
+    const maxAge = max ?? 100;
     if (userAge >= minAge && userAge <= maxAge) score += 70;
-    else score -= 60;
-  } else {
-    score += 30;
   }
 
   const isHousingWelfare =
@@ -99,5 +117,6 @@ export function isRecommended(
   threshold = RECOMMEND_THRESHOLD
 ): boolean {
   if (!profile) return false;
+  if (!isEligibleForRecommendation(welfare, profile)) return false;
   return calculateRecommendScore(welfare, profile) >= threshold;
 }

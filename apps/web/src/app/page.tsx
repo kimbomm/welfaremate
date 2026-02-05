@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Search, MessageCircle, Heart, Home, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { getProfile, hasProfile, type UserProfile } from "@/lib/db";
-import { calculateRecommendScore } from "@/lib/recommend";
+import { calculateRecommendScore, isEligibleForRecommendation } from "@/lib/recommend";
 import {
   getWelfareList,
   getBanner,
@@ -60,14 +60,13 @@ export default function HomePage() {
       const days = getDaysUntil(w.schedule?.end);
       return days === null || days >= 0;
     });
-    const scored = notClosed.map((welfare) => ({
+    const eligible = notClosed.filter((w) => isEligibleForRecommendation(w, profile));
+    const scored = eligible.map((welfare) => ({
       welfare,
       score: calculateRecommendScore(welfare, profile),
     }));
     scored.sort((a, b) => b.score - a.score);
-    const top20 = scored.slice(0, 20);
-    const shuffled = [...top20].sort(() => Math.random() - 0.5);
-    setRecommendedWelfare(shuffled.slice(0, 3).map((item) => item.welfare));
+    setRecommendedWelfare(scored.slice(0, 3).map((item) => item.welfare));
   }, [profile]);
 
   if (loading) {

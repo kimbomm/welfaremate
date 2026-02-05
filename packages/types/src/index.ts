@@ -114,6 +114,7 @@ export interface UserProfile {
   incomeLevel: IncomeLevel;
   annualIncome?: number;
 
+  householdSize?: number;
   householdType: HouseholdType;
   hasChildren: boolean;
   childrenAges?: number[];

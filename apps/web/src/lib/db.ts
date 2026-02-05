@@ -13,6 +13,7 @@ export interface UserProfile {
   employment: "employed" | "self-employed" | "unemployed" | "student" | "other";
   incomeLevel: "low" | "medium" | "high";
   annualIncome?: number;
+  householdSize?: number;
   householdType: "single" | "married" | "with-parents" | "other";
   hasChildren: boolean;
   childrenAges?: number[];

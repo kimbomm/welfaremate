@@ -22,6 +22,7 @@ interface FormData {
   sigungu: string;
   employment: string;
   incomeLevel: string;
+   householdSize: number;
   householdType: string;
   hasChildren: boolean;
   housingType: string;
@@ -40,6 +41,7 @@ export default function OnboardingPage() {
     sigungu: "",
     employment: "",
     incomeLevel: "",
+    householdSize: 1,
     householdType: "",
     hasChildren: false,
     housingType: "",
@@ -91,6 +93,7 @@ export default function OnboardingPage() {
       },
       employment: formData.employment as Employment,
       incomeLevel: formData.incomeLevel as IncomeLevel,
+      householdSize: formData.householdSize,
       householdType: formData.householdType as HouseholdType,
       hasChildren: formData.hasChildren,
       housingType: formData.housingType as HousingType,
@@ -352,6 +355,15 @@ function StepThree({
   formData: FormData;
   updateForm: (key: keyof FormData, value: unknown) => void;
 }) {
+  const handleHouseholdSizeChange = (size: number) => {
+    updateForm("householdSize", size);
+    if (size === 1) {
+      updateForm("householdType", "single");
+    } else if (formData.householdType === "single") {
+      updateForm("householdType", "");
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -363,6 +375,38 @@ function StepThree({
         </p>
       </div>
 
+      {/* 가구원 수 */}
+      <div>
+        <label className="mb-3 block text-sm font-medium text-gray-700">
+          함께 사는 가구원 수 (본인 포함)
+        </label>
+        <div className="grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4].map((size) => (
+            <button
+              key={size}
+              onClick={() => handleHouseholdSizeChange(size)}
+              className={`flex h-12 items-center justify-center rounded-xl border text-sm transition-all ${
+                formData.householdSize === size
+                  ? "border-primary-500 bg-primary-50 text-primary-600"
+                  : "border-gray-200 text-gray-900 hover:border-gray-300"
+              }`}
+            >
+              {size}명
+            </button>
+          ))}
+          <button
+            onClick={() => handleHouseholdSizeChange(5)}
+            className={`flex h-12 items-center justify-center rounded-xl border text-sm transition-all ${
+              formData.householdSize >= 5
+                ? "border-primary-500 bg-primary-50 text-primary-600"
+                : "border-gray-200 text-gray-900 hover:border-gray-300"
+            }`}
+          >
+            5명+
+          </button>
+        </div>
+      </div>
+
       {/* 가구 형태 */}
       <div>
         <label className="mb-3 block text-sm font-medium text-gray-700">
@@ -372,6 +416,10 @@ function StepThree({
           {HOUSEHOLD_OPTIONS.map((option) => (
             <button
               key={option.value}
+              disabled={
+                option.value === "single" &&
+                (formData.householdSize > 1 || formData.hasChildren)
+              }
               onClick={() => updateForm("householdType", option.value)}
               className={`flex h-14 w-full items-center rounded-xl border px-4 text-left transition-all ${
                 formData.householdType === option.value
