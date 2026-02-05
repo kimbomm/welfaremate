@@ -74,19 +74,44 @@ function parseIncomeCondition(text: string | null | undefined): { type: "median"
   return undefined;
 }
 
-/**
- * 지역 파싱
- */
-function parseRegions(text: string | null | undefined): string[] | undefined {
-  if (!text) return undefined;
-  
-  const regions = [
-    "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
-    "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
-  ];
+const SIDO_SHORT = [
+  "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+] as const;
 
-  const found = regions.filter((region) => text.includes(region));
-  return found.length > 0 ? found : undefined;
+const SIDO_FULL_TO_SHORT: Record<string, string> = {
+  "충청북도": "충북",
+  "충청남도": "충남",
+  "경상북도": "경북",
+  "경상남도": "경남",
+  "전라북도": "전북",
+  "전라남도": "전남",
+};
+
+function extractSigungu(text: string): string[] {
+  const matches = text.match(/[가-힣]{2,}(?:시|군|구)\b/g) ?? [];
+  return [...new Set(matches.filter((s) => s !== "서비스"))];
+}
+
+/**
+ * 지역 파싱: 소관기관명 + 복지명(서비스명)에서 시도·시군구 추출
+ */
+function parseRegions(
+  agencyName: string | null | undefined,
+  title: string | null | undefined
+): string[] | undefined {
+  const combined = [agencyName, title].filter(Boolean).join(" ");
+  if (!combined.trim()) return undefined;
+
+  const normalized = Object.entries(SIDO_FULL_TO_SHORT).reduce(
+    (acc, [full, short]) => acc.replace(new RegExp(full, "g"), short),
+    combined
+  );
+
+  const sidoFound = SIDO_SHORT.filter((r) => normalized.includes(r));
+  const sigunguFound = extractSigungu(combined);
+  const result = [...new Set([...sidoFound, ...sigunguFound])];
+  return result.length > 0 ? result : undefined;
 }
 
 /**
@@ -216,7 +241,7 @@ export function transformToWelfareItems(rawData: RawServiceItem[]): WelfareItem[
       eligibility: {
         age: parseAgeCondition(selectionCriteria),
         income: parseIncomeCondition(selectionCriteria),
-        region: parseRegions(item.소관기관명),
+        region: parseRegions(item.소관기관명, item.서비스명),
         conditions,
         conditionsExplained: selectionCriteria,
       },

@@ -89,15 +89,68 @@ interface SnapshotFile {
 const snapshot = snapshotData as SnapshotFile;
 const curationConfig = curationData as CurationConfig;
 
+const SIDO_SHORT = [
+  "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+];
+
+const SIDO_FULL_TO_SHORT: Record<string, string> = {
+  "충청북도": "충북",
+  "충청남도": "충남",
+  "경상북도": "경북",
+  "경상남도": "경남",
+  "전라북도": "전북",
+  "전라남도": "전남",
+};
+
+function extractRegionFromText(text: string): string[] {
+  if (!text.trim()) return [];
+  const normalized = Object.entries(SIDO_FULL_TO_SHORT).reduce(
+    (acc, [full, short]) => acc.replace(new RegExp(full, "g"), short),
+    text
+  );
+  const sidoFound = SIDO_SHORT.filter((r) => normalized.includes(r));
+  const sigunguMatches = text.match(/[가-힣]{2,}(?:시|군|구)\b/g) ?? [];
+  const sigunguFound = Array.from(
+    new Set(sigunguMatches.filter((s) => s !== "서비스"))
+  );
+  return Array.from(new Set([...sidoFound, ...sigunguFound]));
+}
+
 // Data Access Functions
 export function getWelfareList(): WelfareItem[] {
-  return snapshot.items.filter(
-    (item) => !curationConfig.hiddenItems.includes(item.id)
-  );
+  return snapshot.items
+    .filter((item) => !curationConfig.hiddenItems.includes(item.id))
+    .map((item) => {
+      const hasRegion =
+        item.eligibility.region && item.eligibility.region.length > 0;
+      if (hasRegion) return item;
+      const combined = [item.title, item.source?.name].filter(Boolean).join(" ");
+      const region = extractRegionFromText(combined);
+      if (region.length === 0) return item;
+      return {
+        ...item,
+        eligibility: {
+          ...item.eligibility,
+          region,
+        },
+      };
+    });
 }
 
 export function getWelfareById(id: string): WelfareItem | undefined {
-  return snapshot.items.find((item) => item.id === id);
+  const item = snapshot.items.find((item) => item.id === id);
+  if (!item) return undefined;
+  const hasRegion =
+    item.eligibility.region && item.eligibility.region.length > 0;
+  if (hasRegion) return item;
+  const combined = [item.title, item.source?.name].filter(Boolean).join(" ");
+  const region = extractRegionFromText(combined);
+  if (region.length === 0) return item;
+  return {
+    ...item,
+    eligibility: { ...item.eligibility, region },
+  };
 }
 
 export function getWelfareDetail(id: string): WelfareDetailData | undefined {
