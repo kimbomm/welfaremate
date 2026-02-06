@@ -64,4 +64,5 @@ alwaysApply: false
 
 - 이 룰을 따르면 IDE에서 누가(어떤 세션에서) 요청해도 같은 데이터 소스·같은 출력 형식·같은 변경점 기준을 사용한다.
 - 스크립트 `scripts/crawl-detail/src/ai-reformat-full.ts`가 결과를 `welfare-ai.json`에 저장하며, `ai-reformat.ts`는 샘플 3건 테스트용(`welfare-ai-sample.json`)이다.
-- 타깃 플래그는 `scripts/enrich-from-detail/src/targets.ts`가 스냅샷 raw에서 추출해 `data/welfare-targets.json`에 저장한다. 추천 필터링에 사용된다.
+- 타깃 플래그는 `scripts/enrich-from-detail/src/targets.ts`가 스냅샷 raw(`지원대상`, `선정기준`)에서 추출해 `data/welfare-targets.json`에 저장한다. 추천 필터링에 사용된다.
+- **나이(age)**: targets 재가공 시 조건 텍스트에서 나이 구간을 추출해 `items[<id>].age: { min?, max? }`로 저장한다. 검색 필터 "내 나이에 맞는 혜택만"은 스냅샷 `eligibility.age`가 없으면 `getWelfareTargets(id).age`를 사용한다. 추출 패턴 예: "19세~20세", "만 65세 이상", "2006~2007년 출생", "청년"(19~34) 등.

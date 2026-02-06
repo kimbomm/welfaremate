@@ -10,7 +10,7 @@ import {
   targetTraitOptions,
   incomeFilterOptions,
   householdSizeOptions,
-  getIncomeAmountLabel,
+  getIncomeAmountLabelMin,
 } from "@welfaremate/data";
 import type { UserProfile } from "@welfaremate/types";
 
@@ -20,8 +20,9 @@ export interface SearchFilterState {
   benefitTypes: string[];
   scheduleTypes: string[];
   targetTraits: string[];
-  incomeMaxPercent: number | null;
+  incomeMinPercent: number | null;
   householdSize: number;
+  useMyAge: boolean;
 }
 
 const DEFAULT_FILTER: SearchFilterState = {
@@ -30,8 +31,9 @@ const DEFAULT_FILTER: SearchFilterState = {
   benefitTypes: [],
   scheduleTypes: [],
   targetTraits: [],
-  incomeMaxPercent: null,
+  incomeMinPercent: null,
   householdSize: 1,
+  useMyAge: false,
 };
 
 function toggleInList(list: string[], key: string): string[] {
@@ -59,8 +61,19 @@ export function FilterDrawer({
   const [local, setLocal] = useState<SearchFilterState>(initialFilter);
 
   useEffect(() => {
-    if (isOpen) setLocal(initialFilter);
-  }, [isOpen, initialFilter]);
+    if (!isOpen) return;
+    const def = getDefaultFilter?.();
+    const needsProfileDefaults =
+      profile &&
+      def &&
+      initialFilter.incomeMinPercent == null &&
+      (def.incomeMinPercent != null || def.useMyAge);
+    if (needsProfileDefaults) {
+      setLocal(def);
+    } else {
+      setLocal(initialFilter);
+    }
+  }, [isOpen, initialFilter, profile]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -258,15 +271,15 @@ export function FilterDrawer({
               <section className="mb-6">
                 <h3 className="mb-2 text-sm font-medium text-gray-700">소득 기준 (중위소득)</h3>
                 <p className="mb-2 text-xs text-gray-500">
-                  선택한 가구수 기준 월 소득액 참고 (2025년 기준중위소득)
+                  내 소득 구간 이상인 혜택만 보기 (2025년 기준중위소득)
                 </p>
                 <select
-                  value={local.incomeMaxPercent ?? "all"}
+                  value={local.incomeMinPercent ?? "all"}
                   onChange={(e) => {
                     const v = e.target.value;
                     setLocal((s) => ({
                       ...s,
-                      incomeMaxPercent: v === "all" ? null : Number(v),
+                      incomeMinPercent: v === "all" ? null : Number(v),
                     }));
                   }}
                   className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -279,16 +292,35 @@ export function FilterDrawer({
                     </option>
                   ))}
                 </select>
-                {local.incomeMaxPercent != null && (
+                {local.incomeMinPercent != null && (
                   <p className="mt-1.5 text-xs text-gray-500">
-                    {getIncomeAmountLabel(
-                      local.incomeMaxPercent,
+                    {getIncomeAmountLabelMin(
+                      local.incomeMinPercent,
                       local.householdSize >= 1 && local.householdSize <= 7
                         ? local.householdSize
                         : 1
                     )}
                   </p>
                 )}
+              </section>
+
+              <section className="mb-6">
+                <h3 className="mb-2 text-sm font-medium text-gray-700">나이대</h3>
+                <select
+                  value={local.useMyAge ? "my" : ""}
+                  onChange={(e) => {
+                    setLocal((s) => ({
+                      ...s,
+                      useMyAge: e.target.value === "my",
+                    }));
+                  }}
+                  className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem 1.25rem" }}
+                  aria-label="나이대 선택"
+                >
+                  <option value="">선택안함</option>
+                  <option value="my">내 나이에 맞는 혜택만</option>
+                </select>
               </section>
 
               <section>
@@ -306,7 +338,7 @@ export function FilterDrawer({
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem 1.25rem" }}
                   aria-label="대상 특성 선택"
                 >
-                  <option value="">전체</option>
+                  <option value="">선택안함</option>
                   {targetTraitOptions.map(({ value, label }) => (
                     <option key={value} value={value}>
                       {label}

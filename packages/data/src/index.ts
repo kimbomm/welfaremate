@@ -60,7 +60,6 @@ interface WelfareAIResult {
 
 // AI 재가공 데이터 - 정적 import (welfare-ai.json 우선, 없으면 welfare-ai-sample.json)
 let aiData: WelfareAIResult | null = null;
-let enrichedData: WelfareAIResult | null = null;
 try {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   aiData = require("../../../data/welfare-ai.json") as WelfareAIResult;
@@ -72,12 +71,6 @@ try {
     // AI 데이터 없음 - 무시
   }
 }
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  enrichedData = require("../../../data/welfare-enriched.json") as WelfareAIResult;
-} catch {
-  // 규칙 기반 보강 데이터 없음 - 무시
-}
 
 // 협소 대상 플래그 (welfare-targets.json)
 export interface WelfareTargetFlags {
@@ -86,6 +79,7 @@ export interface WelfareTargetFlags {
   requiresBasicLivelihoodOrNearPoor?: boolean;
   requiresStudent?: boolean;
   requiresDisabled?: boolean;
+  age?: { min?: number; max?: number };
 }
 
 interface WelfareTargetsFile {
@@ -191,7 +185,7 @@ export interface WelfareItemWithDetail extends WelfareItem {
 }
 
 export function getWelfareAI(id: string): WelfareAIData | undefined {
-  return aiData?.items[id] ?? enrichedData?.items[id];
+  return aiData?.items[id];
 }
 
 export function getWelfareTargets(id: string): WelfareTargetFlags | undefined {
@@ -309,14 +303,28 @@ export function getIncomeAmountLabel(
   return `${sizeLabel} 기준 약 월 ${amount}만원 이하`;
 }
 
+export function getIncomeAmountLabelMin(
+  percent: number,
+  householdSize: number
+): string {
+  const sizeForAmount = householdSize >= 1 && householdSize <= 7 ? householdSize : 1;
+  const base = MEDIAN_INCOME_MONTHLY_2025[sizeForAmount] ?? MEDIAN_INCOME_MONTHLY_2025[1];
+  const amount = Math.round((base * (percent / 100)) / 10_000);
+  const sizeLabel =
+    householdSize >= 1 && householdSize <= 7
+      ? (householdSizeOptions.find((o) => o.value === householdSize)?.label ?? "1인 가구")
+      : "1인 가구";
+  return `${sizeLabel} 기준 약 월 ${amount}만원 이상`;
+}
+
 export const incomeFilterOptions: {
   value: number | null;
   label: string;
 }[] = [
   { value: null, label: "전체" },
-  { value: 60, label: "중위소득 60% 이하" },
-  { value: 100, label: "중위소득 100% 이하" },
-  { value: 150, label: "중위소득 150% 이하" },
+  { value: 50, label: "중위소득 50% 이상" },
+  { value: 100, label: "중위소득 100% 이상" },
+  { value: 150, label: "중위소득 150% 이상" },
 ];
 
 // Document Links - 주요 서류 발급처 매핑

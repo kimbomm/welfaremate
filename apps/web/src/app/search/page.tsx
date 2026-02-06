@@ -18,6 +18,7 @@ import {
   formatDeadline,
   getDaysUntil,
   targetTraitOptions,
+  getWelfareTargets,
 } from "@welfaremate/data";
 import type { WelfareItem } from "@welfaremate/types";
 import type { UserProfile } from "@welfaremate/types";
@@ -33,6 +34,42 @@ import {
 } from "@/app/search/SortBottomSheet";
 
 const ITEMS_PER_PAGE = 20;
+const INFINITE_SCROLL_THROTTLE_MS = 400;
+const SEARCH_FILTER_STORAGE_KEY = "welfaremate-search-filter";
+
+const DEFAULT_FILTER: SearchFilterState = {
+  regionMode: "all",
+  selectedCategories: [],
+  benefitTypes: [],
+  scheduleTypes: [],
+  targetTraits: [],
+  incomeMinPercent: null,
+  householdSize: 1,
+  useMyAge: false,
+};
+
+function loadFilterFromStorage(): SearchFilterState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(SEARCH_FILTER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || (parsed.regionMode !== "my" && parsed.regionMode !== "all")) return null;
+    return {
+      ...DEFAULT_FILTER,
+      regionMode: parsed.regionMode === "my" ? "my" : "all",
+      selectedCategories: Array.isArray(parsed.selectedCategories) ? parsed.selectedCategories : DEFAULT_FILTER.selectedCategories,
+      benefitTypes: Array.isArray(parsed.benefitTypes) ? parsed.benefitTypes : DEFAULT_FILTER.benefitTypes,
+      scheduleTypes: Array.isArray(parsed.scheduleTypes) ? parsed.scheduleTypes : DEFAULT_FILTER.scheduleTypes,
+      targetTraits: Array.isArray(parsed.targetTraits) ? parsed.targetTraits : DEFAULT_FILTER.targetTraits,
+      incomeMinPercent: typeof parsed.incomeMinPercent === "number" || parsed.incomeMinPercent === null ? parsed.incomeMinPercent : DEFAULT_FILTER.incomeMinPercent,
+      householdSize: typeof parsed.householdSize === "number" && parsed.householdSize >= 1 && parsed.householdSize <= 7 ? parsed.householdSize : DEFAULT_FILTER.householdSize,
+      useMyAge: typeof parsed.useMyAge === "boolean" ? parsed.useMyAge : DEFAULT_FILTER.useMyAge,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function getInitialFilterFromProfile(profile: UserProfile | null): SearchFilterState {
   if (!profile) {
@@ -42,8 +79,9 @@ function getInitialFilterFromProfile(profile: UserProfile | null): SearchFilterS
       benefitTypes: [],
       scheduleTypes: [],
       targetTraits: [],
-      incomeMaxPercent: null,
+      incomeMinPercent: null,
       householdSize: 1,
+      useMyAge: false,
     };
   }
   const targetTraits: string[] = [];
@@ -54,19 +92,24 @@ function getInitialFilterFromProfile(profile: UserProfile | null): SearchFilterS
   const userAge = new Date().getFullYear() - profile.birthYear;
   if (userAge >= 19 && userAge <= 34) targetTraits.push("youth");
 
-  const incomeMaxPercent =
+  const incomeMinPercent =
     profile.incomeLevel === "low"
-      ? 60
+      ? 50
       : profile.incomeLevel === "medium"
         ? 100
-        : null;
+        : profile.incomeLevel === "high"
+          ? null
+          : null;
 
-  let householdSize = 1;
-  if (profile.hasChildren && profile.householdType === "married") {
-    householdSize = 3 + (profile.childrenAges?.length ?? 0);
-    if (householdSize > 7) householdSize = 7;
-  } else if (profile.householdType === "married") {
-    householdSize = 2;
+  let householdSize = profile.householdSize ?? 1;
+  if (householdSize < 1 || householdSize > 7) {
+    if (profile.hasChildren && profile.householdType === "married") {
+      householdSize = Math.min(7, 3 + (profile.childrenAges?.length ?? 0));
+    } else if (profile.householdType === "married") {
+      householdSize = 2;
+    } else {
+      householdSize = 1;
+    }
   }
 
   return {
@@ -75,8 +118,9 @@ function getInitialFilterFromProfile(profile: UserProfile | null): SearchFilterS
     benefitTypes: [],
     scheduleTypes: [],
     targetTraits,
-    incomeMaxPercent,
+    incomeMinPercent,
     householdSize,
+    useMyAge: true,
   };
 }
 
@@ -101,30 +145,23 @@ function matchesTargetTraits(
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [filterState, setFilterState] = useState<SearchFilterState>({
-    regionMode: "all",
-    selectedCategories: [],
-    benefitTypes: [],
-    scheduleTypes: [],
-    targetTraits: [],
-    incomeMaxPercent: null,
-    householdSize: 1,
-  });
+  const [filterState, setFilterState] = useState<SearchFilterState>(() =>
+    loadFilterFromStorage() ?? DEFAULT_FILTER
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recommend");
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const loaderRef = useRef<HTMLDivElement>(null);
-  const hasInitializedFromProfile = useRef(false);
+  const infiniteScrollLastLoad = useRef(0);
 
   useEffect(() => {
     getProfile().then((p) => {
-      setProfile(p ?? null);
-      if (!hasInitializedFromProfile.current) {
-        hasInitializedFromProfile.current = true;
-        setFilterState(getInitialFilterFromProfile(p ?? null));
-      }
+      const nextProfile = p ?? null;
+      setProfile(nextProfile);
+      const saved = loadFilterFromStorage();
+      setFilterState(saved ?? getInitialFilterFromProfile(nextProfile));
     });
   }, []);
 
@@ -164,12 +201,26 @@ export default function SearchPage() {
       );
     }
 
-    if (filterState.incomeMaxPercent != null) {
-      const maxPercent = filterState.incomeMaxPercent;
+    if (filterState.incomeMinPercent != null) {
+      const minPercent = filterState.incomeMinPercent;
       results = results.filter((item) => {
+        const targets = getWelfareTargets(item.id);
+        if (targets?.requiresBasicLivelihoodOrNearPoor) return false;
         const income = item.eligibility.income;
         if (!income || income.percent == null) return true;
-        return income.percent <= maxPercent;
+        return income.percent >= minPercent;
+      });
+    }
+
+    if (filterState.useMyAge && profile?.birthYear != null) {
+      const userAge = new Date().getFullYear() - profile.birthYear;
+      results = results.filter((item) => {
+        const ageRange = item.eligibility.age ?? getWelfareTargets(item.id)?.age;
+        if (!ageRange || (ageRange.min === undefined && ageRange.max === undefined)) return false;
+        const { min, max } = ageRange;
+        if (min !== undefined && userAge < min) return false;
+        if (max !== undefined && userAge > max) return false;
+        return true;
       });
     }
 
@@ -227,7 +278,13 @@ export default function SearchPage() {
 
   const handleApplyFilter = (next: SearchFilterState) => {
     setFilterState(next);
+    try {
+      sessionStorage.setItem(SEARCH_FILTER_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
     setDisplayCount(ITEMS_PER_PAGE);
+    window.scrollTo(0, 0);
   };
 
   const handleSortSelect = (next: SortOption) => {
@@ -240,25 +297,28 @@ export default function SearchPage() {
     (filterState.benefitTypes.length > 0 ? 1 : 0) +
     (filterState.scheduleTypes.length > 0 ? 1 : 0) +
     (filterState.targetTraits.length > 0 ? 1 : 0) +
-    (filterState.incomeMaxPercent != null ? 1 : 0);
+    (filterState.incomeMinPercent != null ? 1 : 0) +
+    (filterState.useMyAge ? 1 : 0);
 
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
   }, [query]);
 
-  // 무한 스크롤
+  // 무한 스크롤 (throttle 적용)
   useEffect(() => {
     const loader = loaderRef.current;
     if (!loader) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setDisplayCount((prev) => {
-            const next = prev + ITEMS_PER_PAGE;
-            return next > sortedResults.length ? sortedResults.length : next;
-          });
-        }
+        if (!entries[0].isIntersecting) return;
+        const now = Date.now();
+        if (now - infiniteScrollLastLoad.current < INFINITE_SCROLL_THROTTLE_MS) return;
+        infiniteScrollLastLoad.current = now;
+        setDisplayCount((prev) => {
+          const next = prev + ITEMS_PER_PAGE;
+          return next > sortedResults.length ? sortedResults.length : next;
+        });
       },
       { threshold: 0.1, rootMargin: "100px" }
     );

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
+import { ScrollToTop } from "./ScrollToTop";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="bg-gray-50 antialiased">
+        <ScrollToTop />
         <div className="mx-auto min-h-screen max-w-[720px] bg-white">
           {children}
         </div>
