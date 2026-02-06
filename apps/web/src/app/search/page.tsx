@@ -145,9 +145,7 @@ function matchesTargetTraits(
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [filterState, setFilterState] = useState<SearchFilterState>(() =>
-    loadFilterFromStorage() ?? DEFAULT_FILTER
-  );
+  const [filterState, setFilterState] = useState<SearchFilterState>(DEFAULT_FILTER);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("recommend");
