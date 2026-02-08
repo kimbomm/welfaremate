@@ -15,13 +15,12 @@
   "generatedAt": "2026-02-05T12:00:00Z",
   "items": {
     "welfare_310000000101": {
-      "targets": {
-        "isCareLeaverOnly": true,
-        "isSingleParentOnly": false,
-        "requiresBasicLivelihoodOrNearPoor": false,
-        "requiresStudent": false,
-        "requiresDisabled": false
-      }
+      "age": { "min": 19, "max": 34 },
+      "isCareLeaverOnly": true,
+      "isSingleParentOnly": false,
+      "requiresBasicLivelihoodOrNearPoor": false,
+      "requiresStudent": false,
+      "requiresDisabled": false
     }
   }
 }
@@ -34,20 +33,23 @@
   - `generatedAt`: 재가공 시점 ISO 문자열
   - `items`: `welfare-snapshot`의 `id` → 타깃 플래그 매핑
 
-- **items[<welfareId>]**
-  - `targets`: 해당 복지 혜택의 **대상 조건 플래그 집합**
-
-- **targets**
-  - `isCareLeaverOnly: boolean`
+- **items[<welfareId>]** (플래그는 items[id] 직속, flat)
+  - `age?: { min?: number; max?: number }`
+    - 조건 텍스트에서 추출한 나이 구간(만 나이). 검색 "나이대" 필터에서 스냅샷 eligibility.age 없을 때 사용.
+  - `isCareLeaverOnly?: boolean`
     - 자립준비청년/보호종료아동 전용일 때 `true`
-  - `isSingleParentOnly: boolean`
+  - `isSingleParentOnly?: boolean`
     - 법정 한부모가구에만 해당할 때 `true`
-  - `requiresBasicLivelihoodOrNearPoor: boolean`
+  - `requiresBasicLivelihoodOrNearPoor?: boolean`
     - 기초생활수급자·차상위계층(저소득) 전용일 때 `true`
-  - `requiresStudent: boolean`
+  - `requiresStudent?: boolean`
     - 대학생/재학 중 등 **학생 신분 필수**일 때 `true`
-  - `requiresDisabled: boolean`
+  - `requiresDisabled?: boolean`
     - 등록 장애인 본인에게만 해당하는 혜택일 때 `true`
+
+- **검색 필터 연동**
+  - 소득 필터(50/100/150% 이상) 선택 시 `requiresBasicLivelihoodOrNearPoor === true` 항목은 제외(기초수급·차상위 전용).
+  - 나이대 필터(내 나이에 맞는 혜택만): 스냅샷 `eligibility.age` 없으면 `getWelfareTargets(id).age` 사용.
 
 > 원칙: **모호하면 전부 false** 로 두어 과도한 제외를 피한다.
 
@@ -120,7 +122,7 @@
 
 ```ts
 // (개념 예시)
-const targets = getWelfareTargets(item.id); // welfare-enriched.json에서 읽은 플래그
+const targets = getWelfareTargets(item.id); // welfare-targets.json에서 읽은 플래그
 
 if (targets?.isCareLeaverOnly && !profile.isCareLeaver) return false;
 if (targets?.isSingleParentOnly && !profile.isSingleParent) return false;
@@ -135,8 +137,8 @@ if (targets?.requiresDisabled && !profile.isDisabled) return false;
 
 ## 4. 구현 단계 요약
 
-1. 이 스키마대로 `welfare-enriched.json`을 생성하는 스크립트/파이프라인 작성
-2. `packages/data/src/index.ts`에서 `welfare-enriched.json`을 import 후
+1. 이 스키마대로 `welfare-targets.json`을 생성하는 스크립트(`scripts/enrich-from-detail/src/targets.ts`) 실행
+2. `packages/data/src/index.ts`에서 `welfare-targets.json`을 import 후
    - `getWelfareTargets(id: string)` 헬퍼 제공
 3. 추천 로직(`recommend.ts`, 검색 정렬 등)에서
    - `UserProfile`과 `targets`를 이용해 **후보 제외 AND 필터**를 먼저 적용
