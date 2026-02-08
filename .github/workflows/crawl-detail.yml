@@ -2,6 +2,9 @@
 name: Crawl Welfare Detail (정부24)
 
 on:
+  schedule:
+    # 매일 한국시간 04:00 (스냅샷 03:00 이후)
+    - cron: "0 19 * * *"
   workflow_dispatch:
 
 jobs:
