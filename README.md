@@ -1,66 +1,167 @@
 # 복지메이트 (WelfareMate)
 
-> 복잡한 복지 정보를 한눈에, 개인정보 걱정 없는 AI 맞춤형 비서
+> **"나도 받을 수 있는 복지가 있을까?"** 에 3분 안에 답하는 서비스.
+> 1만 건이 넘는 공공 복지 정보를 매일 자동으로 모으고, 내 조건에 맞는 것만 골라 쉬운 말로 설명합니다.
 
-## 소개
+<br>
 
-복지메이트는 공공 복지 정보를 쉽게 이해할 수 있도록 AI가 해석해주는 모바일 웹 서비스입니다.
+## 📌 왜 만들었나
 
-### 핵심 가치
+복지 혜택은 많지만 정작 필요한 사람에게 닿지 않습니다.
 
-- **Privacy First** - 서버 DB 없이 브라우저에서만 데이터 관리
-- **Simplicity** - 복잡한 공문서를 사람의 언어로 번역
-- **Speed** - 정적 데이터 기반 초고속 응답
+1. **찾기 어렵다** — 정보가 여러 기관에 흩어져 있고, 1만 건이 넘는다
+2. **읽기 어렵다** — 자격 조건이 공문서 문체로 쓰여 있어 "그래서 내가 대상인지" 알기 어렵다
+3. **개인정보가 부담된다** — 맞춤 추천을 받으려면 나이 · 소득 · 가구 정보를 입력해야 한다
 
-## 프로젝트 구조
+복지메이트는 **자동 수집 → 조건 기반 추천 → AI 설명**으로 이 문제를 풀고, 개인 정보는 **서버에 저장하지 않고 브라우저에만 보관**합니다.
 
-```
-/welfaremate
+<br>
+
+## 📋 프로젝트 개요
+
+| 항목 | 내용 |
+|---|---|
+| 형태 | 개인 프로젝트 (기획 · 설계 · 개발) |
+| 개발 방식 | 기획 · 기술 선택 · 아키텍처 설계는 직접, 구현은 AI 도구를 활용 |
+| 데이터 규모 | 공공 복지 서비스 10,000건 이상 (매일 자동 갱신) |
+
+<br>
+
+## ✨ 주요 기능
+
+| 기능 | 설명 |
+|---|---|
+| **온보딩 프로필** | 나이 · 지역 · 고용 · 소득 · 가구 · 주거 등 조건 입력 (브라우저에만 저장) |
+| **맞춤 추천** | 프로필과 복지 자격 조건을 비교해 점수를 매기고, 자격이 안 되는 항목은 제외 |
+| **검색 · 필터 · 정렬** | 키워드 검색, 조건 필터(바텀시트 · 드로어 UI) |
+| **AI 상담** | 질문에서 키워드를 뽑아 관련 복지를 찾고, 그 결과를 바탕으로 쉬운 말로 답변 |
+| **상세 정보** | 정부24 상세 내용을 읽기 쉬운 형태로 재구성 |
+| **북마크** | 관심 복지 저장 (브라우저 저장) |
+
+<br>
+
+## 🛠 기술 스택
+
+| 영역 | 기술 | 선택 이유 |
+|---|---|---|
+| 모노레포 | Turborepo, pnpm workspace | 웹 · 관리자 앱과 공통 패키지를 한 저장소에서 관리 |
+| 프레임워크 | Next.js 14 (App Router), React 18 | 정적 데이터 기반의 빠른 페이지 제공 |
+| 언어 | TypeScript | 앱 · 패키지 · 수집 스크립트 전체에 공통 타입 적용 |
+| 스타일 | Tailwind CSS, Framer Motion | 모바일 중심 UI와 인터랙션 |
+| 모바일 UI | Vaul(바텀시트), Sonner(토스트), Lucide | 앱처럼 느껴지는 모바일 웹 경험 |
+| 로컬 저장 | IndexedDB (Dexie.js) | 개인 정보를 서버 없이 브라우저에만 보관 |
+| AI | Google Gemini API (gemini-2.5-flash) | 키워드 추출, 검색 결과 기반 답변 생성 |
+| 데이터 수집 | 공공데이터 API, 정부24 크롤러 | 복지 목록과 상세 정보 수집 |
+| 자동화 | GitHub Actions | 매일 데이터 수집 · 갱신 |
+
+<br>
+
+## 🏗 아키텍처
+
+```text
+welfaremate/
 ├── apps/
-│   ├── web/           # 사용자 서비스
-│   └── admin/         # 관리자 페이지
+│   ├── web/                    # 사용자 서비스 (Next.js)
+│   └── admin/                  # 관리자 페이지 (Next.js)
 ├── packages/
-│   ├── ui/            # 공통 컴포넌트
-│   ├── config/        # 공통 설정
-│   ├── types/         # 타입 정의
-│   └── data/          # 데이터 유틸
-├── scripts/           # 데이터 수집 스크립트
-├── data/              # JSON 데이터
-└── docs/              # 문서
+│   ├── ui/                     # 공통 컴포넌트 (Button, Card, Badge)
+│   ├── types/                  # 공유 타입 (WelfareItem, UserProfile ...)
+│   ├── data/                   # 복지 데이터 조회 유틸
+│   └── config/                 # 공통 Tailwind 설정
+├── scripts/
+│   ├── generate-snapshot/      # 공공데이터 API → 스냅샷
+│   ├── crawl-detail/           # 정부24 상세 크롤링 · 파싱
+│   └── enrich-from-detail/     # 상세 정보로 자격 조건 보강
+├── data/                       # 수집된 JSON 데이터와 설정
+└── .github/workflows/          # 자동 수집 파이프라인
 ```
 
-## 기술 스택
+**데이터 파이프라인**
 
-| 영역 | 기술 |
-|------|------|
-| Monorepo | Turborepo |
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Animation | Framer Motion |
-| Storage | IndexedDB (Dexie.js) |
-| AI | Vercel AI SDK |
-| Hosting | Vercel |
+```text
+ 03:00  공공데이터 API ──► welfare-snapshot.json   (GitHub Actions)
+ 04:00  정부24 크롤링 ───► welfare-detail.json     (GitHub Actions)
+        상세 → 자격 조건 보강 ─► welfare-enriched.json
+                                      │
+                                      ▼
+                        Next.js 앱이 정적 데이터로 사용
+```
 
-## 시작하기
+<br>
+
+## 💡 설계 결정
+
+### 1. 서버 DB 없이 동작하는 구조
+- 복지 데이터는 정적 JSON으로 배포하고, 사용자 프로필 · 북마크는 IndexedDB에만 저장
+- → 개인 정보가 서버로 가지 않고, 서버 운영 비용 없이 빠르게 응답
+
+### 2. 수집은 자동, 가공은 분리
+- GitHub Actions가 매일 새벽 수집하고, **데이터가 바뀐 경우에만** 봇이 커밋
+- API 키는 GitHub Secrets로 관리
+- AI 재가공은 CI에서 분리해 비용과 품질을 따로 관리
+- → 매일 최신 데이터를 유지하면서 불필요한 커밋과 AI 호출을 줄임
+
+### 3. 추천은 규칙, 설명은 AI
+- 자격 판단(나이 범위, 청년 기준, 대상 한정 조건 등)은 **규칙 기반 점수**로 계산
+- AI는 찾은 결과를 **설명하는 역할**만 담당
+- → 자격 판단이 AI 답변에 따라 흔들리지 않도록 함
+
+<br>
+
+## 🚀 실행 방법
 
 ```bash
-# 의존성 설치
+# 요구사항: Node.js 20+, pnpm 9
 pnpm install
-
-# 개발 서버 실행
-pnpm dev
-
-# 빌드
-pnpm build
+pnpm dev          # 전체 앱 실행
+pnpm dev:web      # 사용자 앱만 실행
 ```
 
-## 문서
+<details>
+<summary>데이터 수집 명령어</summary>
 
-- [기획서](./docs/PLANNING.md)
-- [기술 스택](./docs/TECH_STACK.md)
-- [데이터 스키마](./docs/DATA_SCHEMA.md)
+```bash
+pnpm generate      # 공공데이터 API 스냅샷 생성 (API 키 필요)
+pnpm crawl:sample  # 정부24 상세 크롤링 (샘플)
+pnpm crawl:full    # 정부24 상세 크롤링 (전체)
+pnpm enrich        # 상세 정보로 자격 조건 보강
+```
+</details>
 
-## 라이선스
+AI 상담 기능은 `GEMINI_API_KEY`와 `USE_AI=true` 환경 변수가 필요합니다.
+
+<br>
+
+## 🤖 개발 방식
+
+| 직접 수행 | AI 도구 활용 |
+|---|---|
+| 문제 정의, 서비스 기획, 화면 흐름 | 컴포넌트 · 페이지 구현 |
+| 기술 스택 선정, 모노레포 구조 설계 | 크롤러 · 파서 코드 작성 |
+| 데이터 파이프라인 · 추천 규칙 설계 | 문서 초안 |
+| 결과 검증, 데이터 품질 점검 | |
+
+<br>
+
+## 📝 한계와 다음 계획
+
+- [ ] 관리자 페이지 기능 구현 (현재 기본 구조만 있음)
+- [ ] 추천 점수 기준 고도화
+- [ ] 신청 마감 알림
+
+<br>
+
+## 📚 문서
+
+| 문서 | 내용 |
+|---|---|
+| [기획서](docs/PLANNING.md) | 서비스 기획 |
+| [기술 스택](docs/TECH_STACK.md) | 기술 선택 상세 |
+| [데이터 스키마](docs/DATA_SCHEMA.md) · [보강 스키마](docs/WELFARE_ENRICHED_SCHEMA.md) | 데이터 구조 |
+| [온보딩 프로필](docs/ONBOARDING_PROFILE.md) | 사용자 조건 설계 |
+
+<br>
+
+## License
 
 MIT
